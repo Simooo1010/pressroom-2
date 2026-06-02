@@ -1,0 +1,196 @@
+/* ==========================================================================
+   Pressroom — Newspaper Format
+   Traditional broadsheet-inspired layout
+   ========================================================================== */
+
+.format-newspaper {
+  padding: 40px 36px;
+  font-family: 'Lora', serif;
+  color: #1a1a1a;
+}
+
+/* --- Masthead --- */
+.format-newspaper .newspaper-masthead {
+  text-align: center;
+  padding-bottom: 16px;
+  margin-bottom: 0;
+}
+
+.format-newspaper .masthead-rule {
+  border: none;
+  border-top: 4px double #1a1a1a;
+  margin: 0;
+}
+
+.format-newspaper .masthead-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 56px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin: 12px 0 8px;
+}
+
+.format-newspaper .masthead-meta {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.format-newspaper .masthead-meta-dot {
+  font-size: 8px;
+}
+
+.format-newspaper .masthead-rule-bottom {
+  border: none;
+  border-top: 2px solid #1a1a1a;
+  margin: 0 0 20px;
+}
+
+/* --- Headline & Meta --- */
+.format-newspaper .newspaper-headline {
+  font-family: 'Playfair Display', serif;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.format-newspaper .newspaper-subtitle {
+  font-size: 16px;
+  font-style: italic;
+  text-align: center;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.format-newspaper .newspaper-byline {
+  font-size: 11px;
+  text-align: center;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 24px;
+}
+
+/* --- Columns --- */
+.format-newspaper .newspaper-columns {
+  column-count: 2;
+  column-gap: 28px;
+  column-rule: 1px solid #ddd;
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+/* --- Drop Cap --- */
+.format-newspaper .drop-cap {
+  float: left;
+  font-family: 'Playfair Display', serif;
+  font-size: 64px;
+  line-height: 0.8;
+  padding-right: 8px;
+  padding-top: 4px;
+  font-weight: 700;
+}
+
+.format-newspaper .newspaper-columns p {
+  margin-bottom: 14px;
+}
+
+/* --- Column Headings --- */
+.format-newspaper .newspaper-columns h2,
+.format-newspaper .newspaper-columns h3 {
+  font-family: 'Playfair Display', serif;
+  column-span: all;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  font-size: 20px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 6px;
+}
+
+/* --- Figures & Images --- */
+.format-newspaper figure {
+  break-inside: avoid;
+  margin: 16px 0;
+  text-align: center;
+}
+
+.format-newspaper figure img {
+  max-width: 100%;
+  height: auto;
+  filter: grayscale(15%);
+}
+
+.format-newspaper figcaption {
+  font-size: 10px;
+  font-style: italic;
+  color: #888;
+  margin-top: 6px;
+}
+
+/* --- Pullquote --- */
+.format-newspaper .pullquote {
+  border: 1px solid #1a1a1a;
+  padding: 14px 18px;
+  margin: 20px 0;
+  font-size: 16px;
+  font-weight: 700;
+  font-style: italic;
+  text-align: center;
+  break-inside: avoid;
+}
+
+/* --- Blockquote --- */
+.format-newspaper blockquote {
+  border-left: 2px solid #1a1a1a;
+  padding-left: 14px;
+  margin: 16px 0;
+  font-style: italic;
+}
+
+/* --- Article Separator --- */
+.format-newspaper .article-separator {
+  column-span: all;
+  border: none;
+  border-top: 3px double #1a1a1a;
+  margin: 32px 0;
+  break-before: column;
+}
+
+/* --- Section Header --- */
+.format-newspaper .section-header {
+  column-span: all;
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 24px 0 12px;
+  border-bottom: 2px solid #1a1a1a;
+  padding-bottom: 8px;
+}
+
+/* --- Responsive --- */
+@media (max-width: 600px) {
+  .format-newspaper .newspaper-columns {
+    column-count: 1;
+  }
+}
+
+/* --- Print --- */
+@media print {
+  .format-newspaper .newspaper-columns {
+    column-count: 2;
+  }
+}

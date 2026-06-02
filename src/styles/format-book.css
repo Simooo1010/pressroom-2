@@ -1,0 +1,139 @@
+/* ==========================================================================
+   Pressroom — Book Format
+   Novel / long-form book layout
+   ========================================================================== */
+
+.format-book {
+  padding: 60px 56px;
+  font-family: 'EB Garamond', serif;
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+/* --- Title Page --- */
+.format-book .book-title-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 600px;
+  text-align: center;
+  padding: 80px 40px;
+}
+
+.format-book .book-title-page h1 {
+  font-size: 36px;
+  font-weight: 400;
+  margin-bottom: 24px;
+  letter-spacing: 0.02em;
+}
+
+.format-book .book-title-page .book-author {
+  font-size: 18px;
+  font-style: italic;
+  color: #555;
+  margin-bottom: 16px;
+}
+
+.format-book .book-title-page .book-date {
+  font-size: 14px;
+  color: #888;
+}
+
+/* --- Chapter Heading --- */
+.format-book .book-chapter {
+  font-size: 22px;
+  font-weight: 400;
+  margin-top: 60px;
+  margin-bottom: 32px;
+  text-align: center;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-variant: small-caps;
+}
+
+/* --- Paragraphs --- */
+.format-book .book-paragraph {
+  text-indent: 1.5em;
+  margin-bottom: 0;
+}
+
+.format-book .book-first-paragraph {
+  text-indent: 0;
+}
+
+/* --- Blockquote --- */
+.format-book blockquote {
+  margin: 24px 32px;
+  font-style: italic;
+  border: none;
+  padding-left: 0;
+}
+
+/* --- Figures --- */
+.format-book figure {
+  margin: 36px auto;
+  text-align: center;
+  max-width: 80%;
+}
+
+.format-book figure img {
+  max-width: 100%;
+  height: auto;
+}
+
+.format-book figcaption {
+  font-size: 12px;
+  font-style: italic;
+  margin-top: 8px;
+  color: #666;
+}
+
+/* --- Scene Break --- */
+.format-book hr {
+  border: none;
+  text-align: center;
+  margin: 36px 0;
+}
+
+.format-book hr::after {
+  content: '* \2003 * \2003 *';
+  font-size: 14px;
+  letter-spacing: 0.5em;
+  color: #999;
+}
+
+/* --- Code --- */
+.format-book pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: #fafafa;
+  padding: 16px;
+  margin: 20px 0;
+}
+
+/* --- Running Header (print only) --- */
+.format-book .running-header {
+  display: none;
+}
+
+/* --- Print --- */
+@media print {
+  .format-book .book-title-page {
+    min-height: 100vh;
+    break-after: page;
+  }
+
+  .format-book .book-chapter {
+    break-before: page;
+  }
+
+  .format-book .running-header {
+    display: block;
+    text-align: center;
+    font-size: 10px;
+    font-style: italic;
+    color: #999;
+    letter-spacing: 0.05em;
+  }
+}

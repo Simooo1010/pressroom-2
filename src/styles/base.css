@@ -1,0 +1,99 @@
+/* ==========================================================================
+   Pressroom — Base Styles
+   CSS reset, custom properties, and global defaults
+   ========================================================================== */
+
+/* --- Google Fonts --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+
+/* --- CSS Reset --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+/* --- Custom Properties: Light Mode (default) --- */
+:root {
+  --bg: #FFFFFF;
+  --text: #1A1A1A;
+  --text-secondary: #666666;
+  --border: #E5E5E5;
+  --surface: #FAFAFA;
+  --accent: #000000;
+}
+
+/* --- Custom Properties: Dark Mode --- */
+[data-theme='dark'] {
+  --bg: #000000;
+  --text: #FFFFFF;
+  --text-secondary: #999999;
+  --border: #262626;
+  --surface: #111111;
+  --accent: #FFFFFF;
+}
+
+/* --- Global Defaults --- */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+::selection {
+  background-color: var(--accent);
+  color: var(--bg);
+}

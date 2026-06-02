@@ -1,0 +1,133 @@
+/* ==========================================================================
+   Pressroom — Monospace Format
+   Draft / typewriter aesthetic
+   ========================================================================== */
+
+.format-monospace {
+  padding: 48px 56px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #1a1a1a;
+}
+
+/* --- Title Block --- */
+.format-monospace .mono-title {
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 6px;
+  letter-spacing: 0.05em;
+}
+
+.format-monospace .mono-meta {
+  font-size: 12px;
+  color: #888;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+/* --- Body Text --- */
+.format-monospace p {
+  margin-bottom: 16px;
+}
+
+/* --- Headings --- */
+.format-monospace h2,
+.format-monospace h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 32px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.format-monospace .heading-prefix {
+  color: #888;
+}
+
+/* --- Blockquote --- */
+.format-monospace blockquote {
+  border-left: 2px solid #ccc;
+  padding-left: 16px;
+  margin: 16px 0;
+  color: #555;
+}
+
+.format-monospace .blockquote-prefix {
+  color: #888;
+}
+
+/* --- Figures & Images --- */
+.format-monospace figure {
+  margin: 20px 0;
+}
+
+.format-monospace figure img {
+  max-width: 100%;
+  height: auto;
+  filter: grayscale(100%);
+}
+
+.format-monospace figcaption {
+  font-size: 11px;
+  color: #888;
+  margin-top: 4px;
+}
+
+.format-monospace .image-placeholder {
+  color: #888;
+  font-style: italic;
+}
+
+/* --- Code --- */
+.format-monospace pre {
+  background: #f5f5f5;
+  padding: 16px;
+  margin: 16px 0;
+  border: 1px solid #e5e5e5;
+  overflow-x: auto;
+}
+
+.format-monospace .code-fence {
+  color: #888;
+  font-size: 11px;
+}
+
+/* --- Horizontal Rule --- */
+.format-monospace hr {
+  border: none;
+  text-align: center;
+  margin: 28px 0;
+  color: #ccc;
+}
+
+.format-monospace hr::after {
+  content: '---';
+  color: #888;
+}
+
+/* --- Links --- */
+.format-monospace a {
+  text-decoration: underline;
+}
+
+/* --- Tables --- */
+.format-monospace table {
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 12px;
+}
+
+.format-monospace th,
+.format-monospace td {
+  padding: 4px 16px;
+  border: 1px solid #ddd;
+}
+
+/* --- Article Separator --- */
+.format-monospace .article-separator {
+  margin: 40px 0;
+  text-align: center;
+  color: #888;
+}

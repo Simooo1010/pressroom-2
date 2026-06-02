@@ -1,0 +1,18 @@
+/* ==========================================================================
+   Pressroom — Customization Overrides
+   Dynamically applies user selections for fonts and margins
+   ========================================================================== */
+
+/* --- Fonts --- */
+[data-font="sans"], [data-font="sans"] * {
+  font-family: 'Inter', sans-serif !important;
+}
+[data-font="serif"], [data-font="serif"] * {
+  font-family: 'Lora', serif !important;
+}
+[data-font="times"], [data-font="times"] * {
+  font-family: 'Times New Roman', Times, serif !important;
+}
+[data-font="mono"], [data-font="mono"] * {
+  font-family: 'JetBrains Mono', monospace !important;
+}

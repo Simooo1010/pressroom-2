@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pressroom — Print Your Substack</title>
+  <meta name="description" content="Turn your favorite Substack posts into beautifully formatted printable documents. Six layout styles: clean, newspaper, scientific paper, book, monospace, and magazine.">
+  <meta property="og:title" content="Pressroom — Print Your Substack">
+  <meta property="og:description" content="Turn your favorite Substack posts into beautifully formatted printable documents.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="/src/styles/base.css">
+  <link rel="stylesheet" href="/src/styles/ui.css">
+  <link rel="stylesheet" href="/src/styles/print-common.css">
+  <link rel="stylesheet" href="/src/styles/format-default.css">
+  <link rel="stylesheet" href="/src/styles/format-newspaper.css">
+  <link rel="stylesheet" href="/src/styles/format-scientific.css">
+  <link rel="stylesheet" href="/src/styles/format-book.css">
+  <link rel="stylesheet" href="/src/styles/format-monospace.css">
+  <link rel="stylesheet" href="/src/styles/format-magazine.css">
+  <link rel="stylesheet" href="/src/styles/customization.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header" id="app-header">
+    <span class="app-title">Pressroom</span>
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+      <span class="theme-toggle-icon" id="theme-toggle-icon">☀</span>
+    </button>
+  </header>
+
+  <!-- Input Section -->
+  <section class="input-section" id="input-section">
+    <p class="input-label">Paste a Substack URL or publication name</p>
+    <form id="fetch-form" class="input-form">
+      <div class="input-wrapper">
+        <input
+          type="text"
+          class="url-input"
+          id="url-input"
+          placeholder="https://example.substack.com/p/article-slug"
+          autocomplete="off"
+          spellcheck="false"
+          required
+        >
+        <button type="submit" class="submit-btn" id="submit-btn">Go</button>
+      </div>
+    </form>
+
+    <!-- Mode Toggle -->
+    <div class="mode-toggle" id="mode-toggle">
+      <label class="mode-option active" data-mode="single">
+        <input type="radio" name="fetch-mode" value="single" checked>
+        <span>Single article</span>
+      </label>
+      <label class="mode-option" data-mode="publication">
+        <input type="radio" name="fetch-mode" value="publication">
+        <span>Latest from publication</span>
+      </label>
+    </div>
+
+    <!-- Post Count (hidden by default, shown for publication mode) -->
+    <div class="post-count-wrapper hidden" id="post-count-wrapper">
+      <label for="post-count">Number of posts:</label>
+      <input type="number" id="post-count" class="post-count-input" min="1" max="20" value="3">
+    </div>
+  </section>
+
+  <!-- Format Selector -->
+  <nav class="format-selector" id="format-selector">
+    <button class="format-btn active" data-format="default">Default</button>
+    <button class="format-btn" data-format="newspaper">Newspaper</button>
+    <button class="format-btn" data-format="scientific">Scientific</button>
+    <button class="format-btn" data-format="book">Book</button>
+    <button class="format-btn" data-format="monospace">Monospace</button>
+    <button class="format-btn" data-format="magazine">Magazine</button>
+  </nav>
+
+  <!-- Customization Controls -->
+  <div class="customization-bar" id="customization-bar">
+    <div class="custom-group">
+      <label for="font-select">Font:</label>
+      <select id="font-select" class="custom-select">
+        <option value="default">Format Default</option>
+        <option value="sans">Modern Sans (Inter)</option>
+        <option value="serif">Classic Serif (Lora)</option>
+        <option value="times">Times New Roman</option>
+        <option value="mono">Typewriter</option>
+      </select>
+    </div>
+    <div class="custom-group">
+      <label for="margin-slider">Margin (<span id="margin-val">25</span>mm):</label>
+      <input type="range" id="margin-slider" class="custom-slider" min="0" max="80" value="25">
+    </div>
+    <div class="custom-group checkbox-group">
+      <label class="custom-checkbox-label">
+        <input type="checkbox" id="exclude-embeds">
+        Exclude Video Embeds
+      </label>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div class="error-message hidden" id="error-message"></div>
+
+  <!-- Preview Section -->
+  <section class="preview-section" id="preview-section">
+    <div class="preview-container" id="preview-container">
+      <div class="preview-empty" id="preview-empty">
+        <p>Your formatted article will appear here</p>
+      </div>
+      <div class="preview-content" id="preview-content"></div>
+    </div>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+      <div class="loading-spinner">
+        <div class="spinner-dot"></div>
+        <div class="spinner-dot"></div>
+        <div class="spinner-dot"></div>
+      </div>
+      <p class="loading-text">Fetching article…</p>
+    </div>
+  </section>
+
+  <!-- Action Bar -->
+  <div class="action-bar hidden" id="action-bar">
+    <button class="action-btn" id="btn-print">
+      ⎙ Print PDF
+    </button>
+    <button class="action-btn primary" id="btn-download">
+      ↓ Download PDF
+    </button>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer" id="app-footer">
+    <p>Pressroom — faithful printing for Substack readers</p>
+  </footer>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

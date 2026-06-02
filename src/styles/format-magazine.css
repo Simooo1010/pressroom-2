@@ -1,0 +1,197 @@
+/* ==========================================================================
+   Pressroom — Magazine Format
+   Editorial / feature article layout
+   ========================================================================== */
+
+.format-magazine {
+  padding: 0;
+  font-family: 'Lora', serif;
+  font-size: 16px;
+  line-height: 1.8;
+  color: #1a1a1a;
+}
+
+/* --- Header --- */
+.format-magazine .magazine-header {
+  padding: 80px 56px 40px;
+  text-align: left;
+}
+
+.format-magazine .magazine-header h1 {
+  font-family: 'Inter', sans-serif;
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+}
+
+.format-magazine .magazine-byline {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+/* --- Hero Image --- */
+.format-magazine .magazine-hero {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.format-magazine .magazine-hero img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* --- Body --- */
+.format-magazine .magazine-body {
+  padding: 40px 56px;
+  max-width: none;
+}
+
+.format-magazine .magazine-body p {
+  margin-bottom: 20px;
+}
+
+/* --- Section Heading --- */
+.format-magazine .magazine-section {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 48px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.format-magazine h2 {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 48px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+/* --- Pullquote --- */
+.format-magazine .magazine-pullquote {
+  font-size: 26px;
+  font-style: italic;
+  line-height: 1.3;
+  padding: 32px 0;
+  margin: 40px 0 40px -20px;
+  border-left: 4px solid #1a1a1a;
+  padding-left: 24px;
+  color: #333;
+}
+
+/* --- Full-Width Image --- */
+.format-magazine .magazine-img-full {
+  margin: 36px -56px;
+  width: calc(100% + 112px);
+}
+
+.format-magazine .magazine-img-full img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* --- Floating Image --- */
+.format-magazine .magazine-img-float {
+  float: right;
+  width: 45%;
+  margin: 8px 0 16px 28px;
+}
+
+.format-magazine .magazine-img-float img {
+  width: 100%;
+  height: auto;
+}
+
+/* --- Captions --- */
+.format-magazine figcaption {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: #888;
+  margin-top: 8px;
+  font-style: normal;
+}
+
+/* --- Blockquote --- */
+.format-magazine blockquote {
+  border-left: 3px solid #ddd;
+  padding-left: 20px;
+  margin: 24px 0;
+  font-style: italic;
+  color: #444;
+}
+
+/* --- Code --- */
+.format-magazine pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: #f8f8f8;
+  padding: 20px;
+  margin: 24px 0;
+  overflow-x: auto;
+}
+
+/* --- Horizontal Rule --- */
+.format-magazine hr {
+  border: none;
+  height: 1px;
+  background: #e5e5e5;
+  margin: 40px 0;
+}
+
+/* --- Article Separator --- */
+.format-magazine .article-separator {
+  break-before: page;
+}
+
+/* --- Responsive --- */
+@media (max-width: 600px) {
+  .format-magazine .magazine-header {
+    padding: 40px 24px 20px;
+  }
+
+  .format-magazine .magazine-body {
+    padding: 24px;
+  }
+
+  .format-magazine .magazine-img-full {
+    margin: 24px -24px;
+    width: calc(100% + 48px);
+  }
+
+  .format-magazine .magazine-header h1 {
+    font-size: 30px;
+  }
+
+  .format-magazine .magazine-pullquote {
+    font-size: 20px;
+    margin-left: 0;
+  }
+}
+
+/* --- Print --- */
+@media print {
+  .format-magazine .magazine-hero {
+    break-after: avoid;
+  }
+
+  .format-magazine .magazine-img-full {
+    margin: 24px 0;
+    width: 100%;
+  }
+}

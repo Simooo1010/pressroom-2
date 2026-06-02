@@ -1,0 +1,162 @@
+/* ==========================================================================
+   Pressroom — Scientific Format
+   Academic paper layout inspired by LaTeX
+   ========================================================================== */
+
+.format-scientific {
+  padding: 72px 72px;
+  font-family: 'Libre Baskerville', serif;
+  font-size: 14.5px;
+  line-height: 1.65;
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+}
+
+/* --- Title Block --- */
+.format-scientific .paper-title {
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+
+.format-scientific .paper-author {
+  text-align: center;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.format-scientific .paper-date {
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 32px;
+}
+
+/* --- Abstract --- */
+.format-scientific .paper-abstract {
+  margin: 0 48px 36px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.format-scientific .paper-abstract-label {
+  font-weight: 700;
+  display: block;
+  text-align: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+/* --- Section Headings --- */
+.format-scientific .section-heading {
+  font-size: 16px;
+  font-weight: 700;
+  margin-top: 32px;
+  margin-bottom: 12px;
+}
+
+.format-scientific .subsection-heading {
+  font-size: 14.5px;
+  font-weight: 700;
+  margin-top: 24px;
+  margin-bottom: 10px;
+}
+
+/* --- Paragraphs --- */
+.format-scientific p {
+  margin-bottom: 14px;
+  text-indent: 1.5em;
+}
+
+.format-scientific p:first-of-type,
+.format-scientific .section-heading + p,
+.format-scientific .subsection-heading + p {
+  text-indent: 0;
+}
+
+/* --- Figures --- */
+.format-scientific figure {
+  margin: 24px auto;
+  text-align: center;
+  max-width: 85%;
+}
+
+.format-scientific figure img {
+  max-width: 100%;
+  height: auto;
+}
+
+.format-scientific figcaption {
+  font-size: 12px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.format-scientific figcaption .fig-label {
+  font-weight: 700;
+}
+
+/* --- Blockquote --- */
+.format-scientific blockquote {
+  margin: 16px 32px;
+  font-style: italic;
+  font-size: 13.5px;
+}
+
+/* --- Tables --- */
+.format-scientific table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 13px;
+}
+
+.format-scientific th,
+.format-scientific td {
+  padding: 6px 12px;
+  text-align: left;
+}
+
+.format-scientific table thead {
+  border-top: 2px solid #1a1a1a;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.format-scientific table tbody {
+  border-bottom: 2px solid #1a1a1a;
+}
+
+/* --- Code --- */
+.format-scientific pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  background: #f5f5f5;
+  padding: 14px;
+  margin: 16px 0;
+  overflow-x: auto;
+}
+
+/* --- Horizontal Rule --- */
+.format-scientific hr {
+  border: none;
+  border-top: 1px solid #ccc;
+  margin: 28px 0;
+}
+
+/* --- Page Number --- */
+.format-scientific .page-number {
+  text-align: center;
+  font-size: 12px;
+  margin-top: 40px;
+}
+
+/* --- Print --- */
+@media print {
+  .format-scientific {
+    padding: 0;
+  }
+}
