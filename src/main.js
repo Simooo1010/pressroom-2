@@ -42,7 +42,7 @@ const dom = {
   loadingOverlay: document.getElementById('loading-overlay'),
   actionBar: document.getElementById('action-bar'),
   btnPrint: document.getElementById('btn-print'),
-  btnDownload: document.getElementById('btn-download'),
+
 };
 
 // ─── Theme Toggle ───────────────────────────────────────
@@ -215,76 +215,6 @@ function printPDF() {
   window.print();
 }
 
-// ─── Download PDF ───────────────────────────────────────
-async function downloadPDF() {
-  if (!state.articles) return;
-
-  const btn = dom.btnDownload;
-  const originalText = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = 'Generating…';
-
-  try {
-    // Get the rendered HTML and all format CSS
-    const html = dom.previewContent.innerHTML;
-
-    // Collect all CSS from format stylesheets
-    const cssSheets = [
-      '/src/styles/base.css',
-      '/src/styles/print-common.css',
-      `/src/styles/format-${state.activeFormat}.css`,
-      '/src/styles/customization.css',
-    ];
-
-    // Fetch each CSS file and concatenate
-    const cssTexts = await Promise.all(
-      cssSheets.map(async (href) => {
-        try {
-          const resp = await fetch(href);
-          return await resp.text();
-        } catch {
-          return '';
-        }
-      })
-    );
-    const css = cssTexts.join('\n');
-
-    const response = await fetch('/api/pdf', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        html,
-        css,
-        format: state.activeFormat,
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || 'PDF generation failed.');
-    }
-
-    // Download the blob
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const title = state.articles[0]?.title || 'pressroom';
-    const safeName = title.replace(/[^a-zA-Z0-9\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase();
-    a.href = url;
-    a.download = `${safeName}-${state.activeFormat}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-  } catch (err) {
-    console.error('Download error:', err);
-    showError(err.message || 'Failed to generate PDF.');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = originalText;
-  }
-}
 
 // ─── Event Listeners ────────────────────────────────────
 function init() {
@@ -316,7 +246,7 @@ function init() {
 
   // Action buttons
   dom.btnPrint.addEventListener('click', printPDF);
-  dom.btnDownload.addEventListener('click', downloadPDF);
+
 
   // Customization controls
   dom.fontSelect.addEventListener('change', (e) => {
