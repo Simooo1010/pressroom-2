@@ -93,8 +93,11 @@ export async function generatePDF(html, css = '', options = {}) {
       timeout: 60_000, // generous timeout for heavy pages
     });
 
-    // Give fonts an extra moment to render (some Google Fonts load lazily)
-    await page.evaluateHandle('document.fonts.ready');
+    // Give fonts an extra moment to render, but don't wait more than 2 seconds
+    await Promise.race([
+      page.evaluateHandle('document.fonts.ready'),
+      new Promise((resolve) => setTimeout(resolve, 2000)),
+    ]);
 
     // Generate the PDF
     const pdfBuffer = await page.pdf({
