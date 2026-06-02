@@ -16,3 +16,26 @@
 [data-font="mono"], [data-font="mono"] * {
   font-family: 'JetBrains Mono', monospace !important;
 }
+
+/* --- Text Dimension --- */
+[data-font-size] {
+  font-size: var(--base-font-size) !important;
+}
+[data-font-size] h1 {
+  font-size: calc(var(--base-font-size) * 2) !important;
+}
+[data-font-size] h2 {
+  font-size: calc(var(--base-font-size) * 1.5) !important;
+}
+[data-font-size] h3 {
+  font-size: calc(var(--base-font-size) * 1.25) !important;
+}
+[data-font-size] .subtitle {
+  font-size: calc(var(--base-font-size) * 1.1) !important;
+}
+[data-font-size] pre, [data-font-size] code {
+  font-size: calc(var(--base-font-size) * 0.85) !important;
+}
+[data-font-size] table {
+  font-size: calc(var(--base-font-size) * 0.9) !important;
+}

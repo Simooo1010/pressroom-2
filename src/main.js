@@ -14,6 +14,7 @@ const state = {
   options: {
     font: 'default',
     margin: 25,
+    fontSize: 12,
     excludeEmbeds: false,
   }
 };
@@ -32,6 +33,8 @@ const dom = {
   formatSelector: document.getElementById('format-selector'),
   formatBtns: document.querySelectorAll('.format-btn'),
   fontSelect: document.getElementById('font-select'),
+  sizeSlider: document.getElementById('size-slider'),
+  sizeVal: document.getElementById('size-val'),
   marginSlider: document.getElementById('margin-slider'),
   marginVal: document.getElementById('margin-val'),
   excludeEmbeds: document.getElementById('exclude-embeds'),
@@ -203,6 +206,8 @@ function renderPreview() {
     const formatDiv = dom.previewContent.firstElementChild;
     if (formatDiv) {
       formatDiv.dataset.font = state.options.font;
+      formatDiv.dataset.fontSize = state.options.fontSize;
+      formatDiv.style.setProperty('--base-font-size', `${state.options.fontSize}pt`);
       formatDiv.style.padding = `${state.options.margin}mm`;
     }
 
@@ -253,6 +258,16 @@ function init() {
     state.options.font = e.target.value;
     const formatDiv = dom.previewContent.firstElementChild;
     if (formatDiv) formatDiv.dataset.font = state.options.font;
+  });
+
+  dom.sizeSlider.addEventListener('input', (e) => {
+    state.options.fontSize = e.target.value;
+    dom.sizeVal.textContent = state.options.fontSize;
+    const formatDiv = dom.previewContent.firstElementChild;
+    if (formatDiv) {
+      formatDiv.dataset.fontSize = state.options.fontSize;
+      formatDiv.style.setProperty('--base-font-size', `${state.options.fontSize}pt`);
+    }
   });
 
   dom.marginSlider.addEventListener('input', (e) => {
