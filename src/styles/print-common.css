@@ -1,7 +1,13 @@
-/* ==========================================================================
-   Pressroom — Print Common Styles
-   Shared @media print rules for all formats
-   ========================================================================== */
+/* --- Page Setup (Top level to ensure browser support) --- */
+@page {
+  margin: 35mm 25mm 25mm 25mm;
+  @bottom-center {
+    content: counter(page);
+    font-family: 'Inter', sans-serif;
+    font-size: 11pt;
+    color: #888;
+  }
+}
 
 @media print {
   /* --- Hide UI Chrome --- */
@@ -35,22 +41,74 @@
     min-height: auto !important;
   }
 
-  /* --- Page Setup --- */
-  @page {
-    margin: 20mm;
-  }
-
   /* --- Typography & Flow Control --- */
+  .cover-page {
+    page-break-after: always !important;
+    break-after: page !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 80vh;
+  }
   p, li, blockquote {
-    orphans: 3;
-    widows: 3;
+    orphans: 4;
+    widows: 4;
+    break-inside: avoid;
   }
 
-  figure,
+  /* Prevent split of intro paragraphs and their target elements */
+  .no-break-after {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  p + figure,
+  p + img,
+  p + ul,
+  p + ol,
+  p + .embed,
+  p + table {
+    break-before: avoid !important;
+    page-break-before: avoid !important;
+  }
+
+  figure {
+    break-inside: avoid !important;
+    margin: 50px auto !important;
+    max-width: 90% !important;
+  }
+
+  pre {
+    break-inside: avoid;
+  }
+
   blockquote,
-  pre,
   .pullquote {
     break-inside: avoid;
+    font-family: 'Lora', serif !important;
+    font-style: italic !important;
+    font-size: 22px !important;
+    text-align: center !important;
+    padding: 36px 40px !important;
+    margin: 50px auto !important;
+    border: none !important;
+    border-top: 2px solid #ddd !important;
+    border-bottom: 2px solid #ddd !important;
+    color: #333 !important;
+    max-width: 85% !important;
+    position: relative;
+  }
+
+  blockquote::before,
+  .pullquote::before {
+    content: "“";
+    display: block;
+    font-size: 60px;
+    font-family: 'Playfair Display', serif;
+    color: #ccc;
+    line-height: 1;
+    margin-bottom: -25px;
+    text-align: center;
   }
 
   h1, h2, h3 {
@@ -60,6 +118,7 @@
   img {
     max-width: 100%;
     break-inside: avoid;
+    margin: 40px 0 !important;
   }
 
   a {

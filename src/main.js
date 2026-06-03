@@ -189,9 +189,23 @@ async function fetchArticles(input) {
   }
 }
 
+// ─── Dynamic @page Margin Style Injection ────────────────────────
+function updatePrintMarginStyle(margin) {
+  let styleEl = document.getElementById('print-margin-style');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'print-margin-style';
+    document.head.appendChild(styleEl);
+  }
+  const topMargin = margin > 0 ? Math.round(margin * 1.5 + 10) : 0;
+  styleEl.textContent = `@page { margin: ${margin}mm !important; margin-top: ${topMargin}mm !important; }`;
+}
+
 // ─── Render Preview ─────────────────────────────────────
 function renderPreview() {
   if (!state.articles) return;
+
+  updatePrintMarginStyle(state.options.margin);
 
   const html = render(state.articles, state.activeFormat, {
     excludeEmbeds: state.options.excludeEmbeds
@@ -273,6 +287,7 @@ function init() {
   dom.marginSlider.addEventListener('input', (e) => {
     state.options.margin = e.target.value;
     dom.marginVal.textContent = state.options.margin;
+    updatePrintMarginStyle(state.options.margin);
     const formatDiv = dom.previewContent.firstElementChild;
     if (formatDiv) formatDiv.style.padding = `${state.options.margin}mm`;
   });

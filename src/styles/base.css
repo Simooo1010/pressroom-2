@@ -81,6 +81,7 @@ table {
   --border: #262626;
   --surface: #111111;
   --accent: #FFFFFF;
+  color-scheme: dark;
 }
 
 /* --- Global Defaults --- */
