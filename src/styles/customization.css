@@ -39,3 +39,14 @@
 [data-font-size] table {
   font-size: calc(var(--base-font-size) * 0.9) !important;
 }
+
+/* --- Line Spacing --- */
+[class*="format-"] {
+  --line-spacing: 1.6;
+}
+
+[class*="format-"] p,
+[class*="format-"] li,
+[class*="format-"] blockquote {
+  line-height: var(--line-spacing) !important;
+}

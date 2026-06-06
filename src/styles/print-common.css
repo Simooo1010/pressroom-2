@@ -1,12 +1,37 @@
-/* --- Page Setup (Top level to ensure browser support) --- */
+/* --- Page Setup — Zero browser margin, we control everything --- */
 @page {
-  margin: 35mm 25mm 25mm 25mm;
-  @bottom-center {
-    content: counter(page);
-    font-family: 'Inter', sans-serif;
-    font-size: 11pt;
-    color: #888;
-  }
+  margin: 0 !important;
+  size: A4;
+}
+
+/* --- Styled Quotes (Applied to both preview screen and printed pages) --- */
+.preview-page blockquote,
+.preview-page .pullquote {
+  break-inside: avoid;
+  font-family: 'Lora', serif !important;
+  font-style: italic !important;
+  font-size: 22px !important;
+  text-align: center !important;
+  padding: 36px 40px !important;
+  margin: 50px auto !important;
+  border: none !important;
+  border-top: 2px solid #ddd !important;
+  border-bottom: 2px solid #ddd !important;
+  color: #333 !important;
+  max-width: 85% !important;
+  position: relative;
+}
+
+.preview-page blockquote::before,
+.preview-page .pullquote::before {
+  content: "\201C";
+  display: block;
+  font-size: 60px;
+  font-family: 'Playfair Display', serif;
+  color: #ccc;
+  line-height: 1;
+  margin-bottom: -25px;
+  text-align: center;
 }
 
 @media print {
@@ -39,37 +64,41 @@
     border-radius: 0 !important;
     margin: 0 !important;
     min-height: auto !important;
+    background: transparent !important;
+  }
+
+  .preview-content {
+    gap: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* --- Paginated Page Divs --- */
+  .preview-page {
+    width: 210mm !important;
+    height: 297mm !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    overflow: hidden !important;
+  }
+
+  .preview-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
   /* --- Typography & Flow Control --- */
   .cover-page {
-    page-break-after: always !important;
-    break-after: page !important;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    min-height: 80vh;
   }
+
   p, li, blockquote {
     orphans: 4;
     widows: 4;
-    break-inside: avoid;
-  }
-
-  /* Prevent split of intro paragraphs and their target elements */
-  .no-break-after {
-    break-after: avoid !important;
-    page-break-after: avoid !important;
-  }
-
-  p + figure,
-  p + img,
-  p + ul,
-  p + ol,
-  p + .embed,
-  p + table {
-    break-before: avoid !important;
-    page-break-before: avoid !important;
   }
 
   figure {
@@ -82,35 +111,6 @@
     break-inside: avoid;
   }
 
-  blockquote,
-  .pullquote {
-    break-inside: avoid;
-    font-family: 'Lora', serif !important;
-    font-style: italic !important;
-    font-size: 22px !important;
-    text-align: center !important;
-    padding: 36px 40px !important;
-    margin: 50px auto !important;
-    border: none !important;
-    border-top: 2px solid #ddd !important;
-    border-bottom: 2px solid #ddd !important;
-    color: #333 !important;
-    max-width: 85% !important;
-    position: relative;
-  }
-
-  blockquote::before,
-  .pullquote::before {
-    content: "“";
-    display: block;
-    font-size: 60px;
-    font-family: 'Playfair Display', serif;
-    color: #ccc;
-    line-height: 1;
-    margin-bottom: -25px;
-    text-align: center;
-  }
-
   h1, h2, h3 {
     break-after: avoid;
   }
@@ -118,11 +118,15 @@
   img {
     max-width: 100%;
     break-inside: avoid;
-    margin: 40px 0 !important;
   }
 
   a {
     color: inherit;
     text-decoration: none;
+  }
+
+  /* --- Hide image remove overlays in print --- */
+  .image-remove-overlay {
+    display: none !important;
   }
 }
