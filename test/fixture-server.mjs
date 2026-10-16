@@ -1,6 +1,7 @@
 // Local Substack-like pages for offline tests (port is configurable: startFixture(port) or FIXTURE_PORT).
 //   /p/test-article  long article, og:image hero == body image A (duplicate src)
 //   /p/rich          distinct hero (.post-hero), duplicate body image, YouTube embed, list/quote/code
+//   /p/intl          Polish/Cyrillic/Greek text (non-Latin font subsets)
 //   /p/missing       404
 //   /p/slow?ms=N     responds after N ms (timeout tests)
 //   /note/...        repo-root note.html (real Substack Note page)
@@ -26,7 +27,9 @@ function pages(origin) {
     para(5), fig(img('c'), 'Image C'), para(6), fig(img('c'), 'Image C again'), para(7),
     '<pre><code class="language-js">const x = 1;</code></pre>', para(8),
   ].join('\n');
+  const intl = (i) => `<p>Akapit ${i}. Zażółć gęślą jaźń — Съешь же ещё этих мягких французских булок, да выпей чаю. ${'Łódź, Kraków, Gdańsk; Ελληνικά κείμενα. '.repeat(6)}</p>`;
   return {
+    '/p/intl': doc('', `<h1 class="post-title">Zażółć gęślą jaźń</h1><div class="available-content"><div class="body markup">${Array.from({ length: 25 }, (_, i) => intl(i)).join('\n')}</div></div>`),
     '/p/test-article': doc(`<meta property="og:image" content="${img('a')}">`,
       `<h1 class="post-title">Fixture Article Title</h1><h3 class="subtitle">A subtitle</h3><div class="available-content"><div class="body markup">${testBody}</div></div>`),
     '/p/rich': doc('<meta name="author" content="Ada Fixture"><meta property="article:published_time" content="2026-01-02">',

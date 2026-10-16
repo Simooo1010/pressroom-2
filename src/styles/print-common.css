@@ -101,10 +101,11 @@
     widows: 4;
   }
 
+  /* No size/margin overrides here: pages are paginated with the screen layout, so
+     resizing figures only in print pushed content past the fixed 297mm page (clipped)
+     and made the PDF differ from the preview. */
   figure {
     break-inside: avoid !important;
-    margin: 50px auto !important;
-    max-width: 90% !important;
   }
 
   pre {

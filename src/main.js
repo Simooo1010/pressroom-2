@@ -344,6 +344,85 @@ function isKeepWithNext(b) {
   return false;
 }
 
+// ─── Oversized paragraphs ───────────────────────────────
+// A paragraph taller than a whole page can never fit and used to be clipped by
+// the fixed-size page. Such paragraphs (only those) are split at a word boundary
+// so the first piece fills the room left on the current page. Works on the live
+// measurer DOM; Range.extractContents keeps inline markup on both pieces.
+function isOversizedParagraph(b, availableHeightPx) {
+  return b.type === 'block' && b.el && b.el.tagName === 'P' && b.el.isConnected &&
+    (b.effectiveHeight || 0) + (b.marginTop || 0) > availableHeightPx;
+}
+
+function minSplitRoom(el) {
+  const cs = window.getComputedStyle(el);
+  const lh = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) || 16) * 1.2;
+  return 2 * lh + Math.max(parseFloat(cs.marginTop) || 0, parseFloat(cs.marginBottom) || 0);
+}
+
+function splitParagraphBlock(b, room) {
+  const p = b.el;
+  const cs = window.getComputedStyle(p);
+  const gap = Math.max(parseFloat(cs.marginTop) || 0, parseFloat(cs.marginBottom) || 0);
+  const target = room - gap;
+
+  const nodes = [];
+  const starts = [];
+  let total = 0;
+  const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    nodes.push(n); starts.push(total); total += n.data.length;
+  }
+  if (!nodes.length) return null;
+  const text = nodes.map(n => n.data).join('');
+
+  const rangeTo = (k) => {
+    let j = nodes.length - 1;
+    while (j > 0 && starts[j] > k) j--;
+    const r = document.createRange();
+    r.setStart(p, 0);
+    r.setEnd(nodes[j], Math.min(k - starts[j], nodes[j].data.length));
+    return r;
+  };
+  const prefixHeight = (k) => {
+    const tmp = p.cloneNode(false);
+    tmp.appendChild(rangeTo(k).cloneContents());
+    p.parentNode.insertBefore(tmp, p);
+    const h = tmp.getBoundingClientRect().height;
+    tmp.remove();
+    return h;
+  };
+
+  // Largest prefix (in characters) that fits, then back off to a word boundary.
+  let lo = 0, hi = total;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (prefixHeight(mid) <= target) lo = mid; else hi = mid - 1;
+  }
+  let k = lo;
+  while (k > 0 && !/\s/.test(text[k - 1])) k--;
+  if (k <= 0 || k >= total) return null;
+
+  const piece = p.cloneNode(false);
+  piece.removeAttribute('id');
+  piece.appendChild(rangeTo(k).extractContents());
+  p.parentNode.insertBefore(piece, p);
+  if (cs.textAlign === 'justify') piece.style.textAlignLast = 'justify';
+  p.style.textIndent = '0'; // the remainder continues the same paragraph
+
+  const pieceBlock = {
+    type: b.type,
+    el: piece,
+    marginTop: parseFloat(window.getComputedStyle(piece).marginTop) || 0,
+    effectiveHeight: p.getBoundingClientRect().top - piece.getBoundingClientRect().top,
+  };
+  const r = p.getBoundingClientRect();
+  b.effectiveHeight = b.nextEl && b.nextEl.isConnected
+    ? b.nextEl.getBoundingClientRect().top - r.top
+    : r.height + (parseFloat(cs.marginBottom) || 0);
+  return pieceBlock;
+}
+
 async function paginatePreview(html) {
   const marginMm = parseFloat(state.options.margin);
   
@@ -451,6 +530,7 @@ async function paginatePreview(html) {
     if (i < elemBlocks.length - 1) {
       const nextRect = elemBlocks[i + 1].el.getBoundingClientRect();
       elemBlocks[i].effectiveHeight = nextRect.top - currentRect.top;
+      elemBlocks[i].nextEl = elemBlocks[i + 1].el;
     } else {
       // For the last element, use its actual height plus its bottom margin
       const lastMarginBottom = parseFloat(computed.marginBottom) || 0;
@@ -458,7 +538,7 @@ async function paginatePreview(html) {
     }
   }
 
-  dom.previewContent.removeChild(measurer);
+  // (the measurer stays in the DOM during distribution, for splitParagraphBlock)
 
   // ── Distribution pass ─────────────────────────────────
   const pages = [];
@@ -485,6 +565,17 @@ async function paginatePreview(html) {
       currentPage = [];
       currentH = 0;
       continue;
+    }
+
+    // Paragraph taller than a page: split off a piece that fills the room left here.
+    if (isOversizedParagraph(b, availableHeightPx)) {
+      const room = availableHeightPx - currentH - (currentPage.length === 0 ? b.marginTop || 0 : 0);
+      const piece = room >= minSplitRoom(b.el) ? splitParagraphBlock(b, room) : null;
+      if (piece) {
+        blocks.splice(i, 0, piece);
+        i--; // place the piece, then the (possibly still oversized) remainder
+        continue;
+      }
     }
 
     // Would this block overflow the current page?
@@ -531,6 +622,12 @@ async function paginatePreview(html) {
       if (currentPage.length === 0 && b.marginTop) {
         h += b.marginTop;
       }
+
+      // Oversized paragraph that had no room on the previous page: split it on this one.
+      if (isOversizedParagraph(b, availableHeightPx)) {
+        i--;
+        continue;
+      }
     }
 
     currentPage.push(b);
@@ -538,6 +635,8 @@ async function paginatePreview(html) {
   }
 
   if (currentPage.length > 0) pages.push(currentPage);
+
+  dom.previewContent.removeChild(measurer);
 
   // ── Build DOM ─────────────────────────────────────────
   dom.previewContent.innerHTML = '';

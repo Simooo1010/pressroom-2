@@ -19,7 +19,10 @@ function getBrowser() {
     const p = puppeteer.launch({
       headless: true,
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--font-render-hinting=none'],
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--font-render-hinting=none',
+        // Concurrent jobs = several tabs; without these, non-foreground tabs get their timers
+        // throttled (the app's debounce/fade timers and our polling slow down several-fold).
+        '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'],
     }).then((b) => {
       // Crash / close → next job relaunches (only reset if this browser is still the current one).
       b.on('disconnected', () => { if (browserPromise === p) browserPromise = null; });
@@ -162,6 +165,10 @@ export async function withRenderedApp(job, fn) {
     });
     const work = (async () => {
       await page.setViewport({ width: 1280, height: 900 });
+      // Every job tab behaves as the focused, visible tab (concurrent jobs otherwise stall on
+      // background-tab image loading/decoding and frame production).
+      const cdp = await page.createCDPSession();
+      await cdp.send('Emulation.setFocusEmulationEnabled', { enabled: true }).catch(() => {});
       const appOrigin = `http://127.0.0.1:${process.env.PORT || 3001}`;
       let parseBody = null;
       page.on('response', (res) => {
