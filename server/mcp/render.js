@@ -9,6 +9,8 @@ import { normalizeOptions } from './options.js';
 
 const MAX_CONCURRENT = Number(process.env.MCP_MAX_CONCURRENT || 2);
 const JOB_TIMEOUT_MS = Number(process.env.MCP_JOB_TIMEOUT_MS || 90_000);
+// Max time a job may wait for a free render slot before failing (queue is FIFO).
+const QUEUE_TIMEOUT_MS = Number(process.env.MCP_QUEUE_TIMEOUT_MS || 120_000);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let browserPromise = null;
 let active = 0;
@@ -36,13 +38,23 @@ function getBrowser() {
   return browserPromise;
 }
 
-async function acquire() {
-  if (active < MAX_CONCURRENT) { active++; return; }
-  await new Promise((r) => waiting.push(r));
+/** Take a render slot, waiting at most QUEUE_TIMEOUT_MS (then reject: the job never started). */
+function acquire() {
+  if (active < MAX_CONCURRENT) { active++; return Promise.resolve(); }
+  return new Promise((resolve, reject) => {
+    const entry = { grant: () => { clearTimeout(entry.timer); resolve(); } };
+    entry.timer = setTimeout(() => {
+      const i = waiting.indexOf(entry);
+      if (i >= 0) waiting.splice(i, 1);
+      reject(new Error(`The PDF renderer is busy (${active} job(s) running, ${waiting.length} more queued); waited ${Math.round(QUEUE_TIMEOUT_MS / 1000)} s for a free slot. Please try again in a minute.`));
+    }, QUEUE_TIMEOUT_MS);
+    waiting.push(entry);
+  });
 }
 function release() {
+  // Hand the slot straight to the next waiter (active stays the same), else free it.
   const next = waiting.shift();
-  if (next) next(); else active--;
+  if (next) next.grant(); else active--;
 }
 
 export async function closeBrowser() {
@@ -269,14 +281,33 @@ export async function listImages(page) {
   return page.__pressroomImages || collectImages(page, null);
 }
 
+/**
+ * Number of pages in a PDF buffer: page objects (`/Type /Page`, not `/Pages`), cross-checked
+ * with the page tree's root `/Count`. Chromium (Skia) writes page dictionaries uncompressed;
+ * if they were hidden in object streams the root /Count is used instead.
+ */
+export function pdfPageCount(buf) {
+  const s = Buffer.isBuffer(buf) ? buf.toString('latin1') : String(buf);
+  const objects = (s.match(/\/Type\s*\/Page(?![A-Za-z])/g) || []).length;
+  const counts = [...s.matchAll(/\/Type\s*\/Pages\b[^>]*?\/Count\s+(\d+)|\/Count\s+(\d+)[^>]*?\/Type\s*\/Pages\b/g)].map((m) => Number(m[1] || m[2]));
+  const root = counts.length ? Math.max(...counts) : 0;
+  return objects || root;
+}
+
+/** Print the current app state to PDF exactly like the app's "Download PDF" (window.print()). */
 export async function makePdf(page, article) {
   const title = (article?.title || '').replace(/[\\/:*?"<>|]/g, '').trim();
   // Same document title the app sets before window.print() (becomes the PDF Title metadata).
   if (title) await page.evaluate((t) => { document.title = t; }, title);
   await page.emulateMediaType('print');
-  const buf = await page.pdf({ preferCSSPageSize: true, printBackground: true, margin: { top: 0, right: 0, bottom: 0, left: 0 } });
-  await page.emulateMediaType('screen');
-  return { pdf: Buffer.from(buf), title };
+  let buf;
+  try {
+    buf = await page.pdf({ preferCSSPageSize: true, printBackground: true, margin: { top: 0, right: 0, bottom: 0, left: 0 } });
+  } finally {
+    await page.emulateMediaType('screen');
+  }
+  const pdf = Buffer.from(buf);
+  return { pdf, title, pages: pdfPageCount(pdf) };
 }
 
 /** PNG of page 1 as the user sees it in the app, without the sticky action bar or hover overlays. */
@@ -290,6 +321,19 @@ export async function firstPagePng(page) {
   }
 }
 
-export async function pageCount(page) {
-  return page.evaluate(() => document.querySelectorAll('.preview-page').length);
+/** Pages the app shows (paginated .preview-page divs inside the preview, not its hidden measuring divs). */
+export async function uiPageCount(page) {
+  return page.evaluate(() => [...document.querySelectorAll('#preview-content > .preview-page')].filter((p) => p.style.visibility !== 'hidden').length);
+}
+
+/**
+ * Page count as printed: always taken from an actual PDF of the current state, so
+ * inspect_article / preview_article / generate_pdf report exactly what the PDF contains.
+ * Logs when the UI's page divs disagree (would indicate a pagination/print mismatch).
+ */
+export async function pageCount(page, pdf) {
+  const printed = pdf ? pdfPageCount(pdf) : (await makePdf(page, null)).pages;
+  const ui = await uiPageCount(page);
+  if (ui !== printed) console.warn(`[mcp] page count mismatch: UI shows ${ui} pages, PDF has ${printed}`);
+  return printed;
 }

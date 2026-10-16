@@ -15,6 +15,15 @@ Common options: `format` (default, newspaper, scientific, book, monospace, magaz
 `fontSize` 8–36, `lineSpacing` 1.0–3.0, `margin` 0–80 mm, `excludeEmbeds`, `removeImages` (ids from `inspect_article`).
 Tool descriptions instruct the assistant to ask the user for any option not stated, using its native question UI.
 
+Page counts reported by `inspect_article`, `preview_article` ("page 1 of N") and `generate_pdf` are always counted
+from an actual printed PDF of the same state (page objects in the PDF), so they match the file exactly.
+
+Notes (`…/note/c-<id>`): Substack serves Notes as a client-rendered shell, so the parser reads the note from the
+`window._preloads` JSON embedded in the page (`feedData.feedItem.comment`): author name, `@handle`, primary publication,
+date, the ProseMirror `body_json` (paragraphs, headings, bold/italic/code/strike/links, hard breaks, bullet/ordered lists,
+quotes, code blocks, rules, images) plus image/link/post attachments. It falls back to the plain `body` text, then to the
+old DOM selectors. The title is the note's first sentence.
+
 ## Run
 ```
 npm ci && npm run build
@@ -32,6 +41,7 @@ Env:
 | `TRUST_PROXY` | Express `trust proxy` (default `1` in production = one reverse proxy in front; `false` if exposed directly) |
 | `MCP_EXTRA_HOSTS` | custom Substack domains, comma-separated (`substack.com` + subdomains always allowed) |
 | `MCP_MAX_CONCURRENT` | parallel renders (default 2); `MCP_JOB_TIMEOUT_MS` per-render timeout (default 90000) |
+| `MCP_QUEUE_TIMEOUT_MS` | max wait for a free render slot (default 120000); after that the call fails with "The PDF renderer is busy … try again" (the job never starts) |
 | `MCP_FILE_TTL_MS` | download link lifetime (default 30 min); `MCP_MAX_FILES` (50) and `MCP_FILE_STORE_MB` (200) cap the in-memory store, oldest evicted first |
 | `PRESSROOM_ENABLE_API_PDF=1` | re-enable the legacy `POST /api/pdf` (off in production / when MCP is on; the web app doesn't use it) |
 | `PUPPETEER_EXECUTABLE_PATH` | custom Chrome binary (not needed with the Dockerfile) |
@@ -67,4 +77,5 @@ Wrong/missing secret → `401`. Tools are annotated read-only.
 - Paywalled posts: only the publicly served part is rendered.
 
 ## Tests
-`npm run build`, start the server with `NODE_ENV=production PRESSROOM_ALLOW_PRIVATE=1 MCP_EXTRA_HOSTS=127.0.0.1 MCP_SECRET=<24+ chars>`, then `node test/mcp-e2e.mjs` (uses a local fixture article).
+`npm run build`, start the server with `NODE_ENV=production PRESSROOM_ALLOW_PRIVATE=1 MCP_EXTRA_HOSTS=127.0.0.1 MCP_SECRET=<24+ chars>`, then `node test/mcp-e2e.mjs` (uses local fixtures from `test/fixture-server.mjs`: articles, the real Note page `note.html`
+and a synthetic rich Note built from `preloads_parsed.json`). Set `PORT` / `FIXTURE_PORT` to match your server and a free port.

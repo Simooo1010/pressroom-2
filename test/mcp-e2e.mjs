@@ -39,7 +39,7 @@ check(insBook.images.length === 4 && insBook.images[0].hero && insBook.images[0]
 for (const format of FORMATS) {
   const r = await call('generate_pdf', { url, format, font: 'serif', fontSize: 14, lineSpacing: 1.8, margin: 10, excludeEmbeds: true });
   const pdf = pdfOf(r);
-  check(!r.isError && pdf && pdfPages(pdf) === reported(r), `${format}: ${reported(r)} UI pages, ${pdf ? pdfPages(pdf) : '-'} PDF pages`);
+  check(!r.isError && pdf && pdfPages(pdf) === reported(r), `${format}: ${reported(r)} reported pages, ${pdf ? pdfPages(pdf) : "-"} PDF pages`);
   if (pdf) fs.writeFileSync(`${out}/${format}.pdf`, pdf);
 }
 
@@ -53,6 +53,18 @@ const bad = await call('generate_pdf', { url, removeImages: [9] });
 check(bad.isError && /Unknown image id/.test(textOf(bad)), `invalid id → ${textOf(bad)}`);
 const missing = await call('generate_pdf', { url: `${F}/p/missing` });
 check(missing.isError && /404/.test(textOf(missing)), `404 → ${textOf(missing)}`);
+
+// Notes: content comes only from window._preloads (real note.html + a rich synthetic note with an image).
+const note = JSON.parse(textOf(await call('inspect_article', { url: `${F}/note/c-269399383` })));
+check(note.author === 'Physics Gene' && /^Every photo on your phone/.test(note.title || '') && note.pages >= 1, `note: "${note.title}" by ${note.author}, ${note.pages} pages`);
+const richNote = JSON.parse(textOf(await call('inspect_article', { url: `${F}/note/rich`, format: 'monospace' })));
+check(richNote.images.length === 1 && richNote.images[0].shown, `rich note: ${richNote.pages} pages, ${richNote.images.length} image(s)`);
+for (const format of ['newspaper', 'book']) {
+  const r = await call('generate_pdf', { url: `${F}/note/rich`, format });
+  const pdf = pdfOf(r);
+  check(!r.isError && pdf && pdfPages(pdf) === reported(r), `note ${format}: ${reported(r)} pages`);
+  if (pdf) fs.writeFileSync(`${out}/note-${format}.pdf`, pdf);
+}
 
 const pv = await call('preview_article', { url, format: 'magazine' });
 check(pv.content[0]?.type === 'image', `preview: ${textOf(pv)}`);

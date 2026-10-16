@@ -80,7 +80,8 @@ export function createMcpServer({ baseUrl }) {
       assertAllowedHost(a.url);
       const r = await withRenderedApp(split(a), async (page, ctx) => {
         const { pdf, title } = await makePdf(page, ctx.article);
-        return { pdf, title, pages: await pageCount(page), options: ctx.options };
+        // Reported count comes from the PDF itself (never from the UI's page divs).
+        return { pdf, title, pages: await pageCount(page, pdf), options: ctx.options };
       });
       const base = (r.title || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120) || 'pressroom-article';
       const { id, filename, expiresAt } = saveFile(r.pdf, `${base}.pdf`);
