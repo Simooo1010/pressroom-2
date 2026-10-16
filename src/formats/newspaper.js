@@ -85,7 +85,7 @@ function renderElement(el, isFirstParagraph) {
 
     case 'code': {
       const langClass = el.language ? ` class="language-${escAttr(el.language)}"` : '';
-      return `<pre><code${langClass}>${el.content}</code></pre>`;
+      return `<pre><code${langClass}>${String(el.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></pre>`;
     }
 
     case 'separator':

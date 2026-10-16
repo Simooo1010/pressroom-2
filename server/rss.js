@@ -5,6 +5,7 @@
 // ──────────────────────────────────────────────────────────────────
 
 import Parser from 'rss-parser';
+import { safeFetch } from './urlGuard.js';
 
 const rssParser = new Parser({
   // Substack feeds sometimes include non-standard fields
@@ -60,7 +61,16 @@ export async function fetchLatestPosts(publication, count = 5) {
   const safeCount = Math.min(Math.max(1, count), 50);
 
   try {
-    const feed = await rssParser.parseURL(feedUrl);
+    // Fetch through the SSRF guard (rss-parser's own parseURL is unguarded).
+    const res = await safeFetch(feedUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        Accept: 'application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8',
+      },
+    });
+    if (!res.ok) throw Object.assign(new Error(`Status code ${res.status}`), { status: res.status });
+    const feed = await rssParser.parseString(await res.text());
 
     const items = (feed.items || []).slice(0, safeCount).map((item) => ({
       url: item.link || '',
@@ -89,7 +99,9 @@ export async function fetchLatestPosts(publication, count = 5) {
       );
     }
 
-    console.error(`[rss] Error fetching feed from ${feedUrl}:`, err);
+    if (err.code === 'EHOSTBLOCKED') throw err;
+
+    console.error(`[rss] Error fetching feed from ${feedUrl}:`, err.message);
     throw new Error(`Failed to fetch RSS feed: ${err.message}`);
   }
 }

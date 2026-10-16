@@ -189,9 +189,4 @@
   .format-magazine .magazine-hero {
     break-after: avoid;
   }
-
-  .format-magazine .magazine-img-full {
-    margin: 24px 0;
-    width: 100%;
-  }
 }
