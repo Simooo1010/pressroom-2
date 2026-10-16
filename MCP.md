@@ -18,27 +18,53 @@ Tool descriptions instruct the assistant to ask the user for any option not stat
 ## Run
 ```
 npm ci && npm run build
-MCP_SECRET=<long random> NODE_ENV=production PUBLIC_BASE_URL=https://your-host node server/index.js
+MCP_SECRET=$(openssl rand -hex 32) NODE_ENV=production PUBLIC_BASE_URL=https://your-host node server/index.js
 ```
 Endpoint: `https://your-host/mcp/<MCP_SECRET>` (or `/mcp` with `Authorization: Bearer <MCP_SECRET>`).
-Generate a secret: `openssl rand -hex 32`. Rotate by changing the variable.
+`MCP_SECRET` must be at least 24 characters, otherwise MCP stays disabled. Rotate by changing the variable and restarting.
+`NODE_ENV=production` is required: the renderer drives the built UI served by this same process.
 
-Env: `MCP_SECRET` (enables MCP), `PUBLIC_BASE_URL`, `MCP_EXTRA_HOSTS` (custom Substack domains, comma-separated; `substack.com` always allowed),
-`MCP_MAX_CONCURRENT` (default 2), `MCP_JOB_TIMEOUT_MS`, `MCP_FILE_TTL_MS`, `PUPPETEER_EXECUTABLE_PATH`.
+Env:
+| Variable | Meaning |
+|---|---|
+| `MCP_SECRET` | enables `/mcp` and `/files` (both return 404 when unset) |
+| `PUBLIC_BASE_URL` | base for download links, e.g. `https://your-host`. If unset, links use the request's Host + `X-Forwarded-Proto` |
+| `TRUST_PROXY` | Express `trust proxy` (default `1` in production = one reverse proxy in front; `false` if exposed directly) |
+| `MCP_EXTRA_HOSTS` | custom Substack domains, comma-separated (`substack.com` + subdomains always allowed) |
+| `MCP_MAX_CONCURRENT` | parallel renders (default 2); `MCP_JOB_TIMEOUT_MS` per-render timeout (default 90000) |
+| `MCP_FILE_TTL_MS` | download link lifetime (default 30 min); `MCP_MAX_FILES` (50) and `MCP_FILE_STORE_MB` (200) cap the in-memory store, oldest evicted first |
+| `PRESSROOM_ENABLE_API_PDF=1` | re-enable the legacy `POST /api/pdf` (off in production / when MCP is on; the web app doesn't use it) |
+| `PUPPETEER_EXECUTABLE_PATH` | custom Chrome binary (not needed with the Dockerfile) |
 
 ## Deploy
-Any Docker host (Railway / Render / Fly): build from the `Dockerfile`, set the env vars above, expose port 3001 over HTTPS.
+Any Docker host (Railway / Render / Fly / a VM): build from the `Dockerfile`, set the env vars above, expose port 3001 (or the host's `PORT`) over HTTPS.
+Health check: `GET /healthz` → `200 {"ok":true}` (also wired as Docker `HEALTHCHECK`).
+The image runs as the unprivileged `pptruser` under `tini`, using the Chrome bundled in `ghcr.io/puppeteer/puppeteer:23.11.1`
+(the lockfile pins puppeteer 23.11.1; the build fails early if Chrome is missing). Give it ≥1 GB RAM.
+Run a **single instance** (or sticky sessions): generated files live in process memory, so a link only works on the instance that made it.
 Not suitable for Vercel serverless (needs Chromium).
 
 ## Connect
 - **Claude.ai / Desktop**: Settings → Connectors → Add custom connector → URL `https://your-host/mcp/<secret>`.
 - **ChatGPT**: Settings → Connectors → Developer mode → create connector with the same URL, no auth.
-- **Claude Code**: `claude mcp add --transport http pressroom https://your-host/mcp/<secret>`.
+- **Claude Code**: `claude mcp add --transport http pressroom https://your-host/mcp/<secret>`
+  (or `--header "Authorization: Bearer <secret>"` with `https://your-host/mcp`).
+
+Protocol: stateless Streamable HTTP. `POST` only; `GET`/`DELETE` answer `405` (no server-initiated stream, no sessions).
+Wrong/missing secret → `401`. Tools are annotated read-only.
 
 ## Security notes
-Only `*.substack.com` + `MCP_EXTRA_HOSTS` are accepted by the tools; private/loopback IPs are blocked (also across redirects and for page subresources).
-The web app and `/api/parse` remain publicly reachable on the same host.
-Paywalled posts: only the publicly served part is rendered.
+- Auth: constant-time comparison (SHA-256 digests), checked before the request body is parsed. The secret is never logged by the app,
+  but a secret **in the URL** will appear in reverse-proxy / platform access logs; prefer the Bearer form where the client supports it.
+- SSRF: the tools accept only `*.substack.com` + `MCP_EXTRA_HOSTS` (no credentials in URL, http(s) only). Every server-side fetch
+  (`/api/parse`, RSS feeds, each redirect hop) rejects loopback/private/link-local/reserved IPv4 and IPv6 targets, including
+  IPv4-mapped (`::ffff:127.0.0.1`), NAT64/6to4 forms, decimal/hex/octal IPv4 spellings and `localhost`/`.internal`/`.local`/single-label names.
+  The validated IP is pinned at connect time (no DNS-rebinding window). Page subresources in the headless renderer are filtered the same way.
+- The app's HTML is served with a CSP (`script-src 'self'`, `connect-src 'self'`), so scripts/event handlers in scraped article HTML
+  don't run and the page can't open WebSockets/fetches to other hosts (Chromium request interception does not cover WebSockets).
+- The web app and `/api/parse` remain publicly reachable on the same host (guarded as above). `/api/pdf` (arbitrary HTML → Chromium) is disabled.
+- Chrome runs with `--no-sandbox` (normal in containers); the container user is non-root.
+- Paywalled posts: only the publicly served part is rendered.
 
 ## Tests
-`npm run build`, start the server with `PRESSROOM_ALLOW_PRIVATE=1 MCP_EXTRA_HOSTS=127.0.0.1 MCP_SECRET=...`, then `node test/mcp-e2e.mjs` (uses a local fixture article).
+`npm run build`, start the server with `NODE_ENV=production PRESSROOM_ALLOW_PRIVATE=1 MCP_EXTRA_HOSTS=127.0.0.1 MCP_SECRET=<24+ chars>`, then `node test/mcp-e2e.mjs` (uses a local fixture article).
