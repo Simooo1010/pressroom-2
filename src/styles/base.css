@@ -63,38 +63,44 @@ table {
   border-collapse: collapse;
 }
 
-/* --- Custom Properties: Light Mode (default) --- */
+/* --- Design tokens: "Press Sheet" (light = day edition) --- */
 :root {
-  --bg: #FFFFFF;
-  --text: #1A1A1A;
-  --text-secondary: #666666;
-  --border: #E5E5E5;
-  --surface: #FAFAFA;
-  --accent: #000000;
+  --paper: #EDEBE6;
+  --sheet: #FFFFFF;
+  --card: #FFFFFF;
+  --desk: #D5D2CA;
+  --ink: #111111;
+  --ink-2: #55524C;
+  --magenta: #C4005F;
+  --on-magenta: #FFFFFF;
+  --font-display: 'Bodoni Moda', 'Playfair Display', Georgia, serif;
+  --font-ui: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
 }
 
-/* --- Custom Properties: Dark Mode --- */
+/* --- Night edition --- */
 [data-theme='dark'] {
-  --bg: #000000;
-  --text: #FFFFFF;
-  --text-secondary: #999999;
-  --border: #262626;
-  --surface: #111111;
-  --accent: #FFFFFF;
+  --paper: #141414;
+  --card: #1D1D1C;
+  --desk: #2A2A28;
+  --ink: #EDEBE6;
+  --ink-2: #A9A59D;
+  --magenta: #FF4D9E;
+  --on-magenta: #111111;
   color-scheme: dark;
 }
 
 /* --- Global Defaults --- */
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: var(--bg);
-  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  background-color: var(--paper);
+  color: var(--ink);
   line-height: 1.5;
   min-height: 100vh;
   transition: color 0.3s ease, background-color 0.3s ease;
 }
 
 ::selection {
-  background-color: var(--accent);
-  color: var(--bg);
+  background-color: var(--ink);
+  color: var(--paper);
 }

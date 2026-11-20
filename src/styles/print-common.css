@@ -36,40 +36,36 @@
 
 @media print {
   /* --- Hide UI Chrome --- */
-  .app-header,
-  .input-section,
-  .format-selector,
-  .customization-bar,
-  .action-bar,
-  .app-footer,
-  .mode-toggle,
-  .post-count-wrapper,
-  .loading-overlay,
-  .error-message,
-  .preview-empty,
-  .theme-toggle {
+  .front,
+  .slug-bar,
+  .rail,
+  .pub-tabs,
+  .spread-nav,
+  .print-overlay,
+  .skip-link,
+  .crop {
     display: none !important;
   }
 
-  /* --- Reset Preview Container --- */
-  .preview-section {
-    padding: 0 !important;
+  body, .desk, .proof, .proof-body {
     display: block !important;
+    background: #fff !important;
+    padding: 0 !important;
   }
 
+  /* --- Reset Preview Container --- */
   .preview-container {
     width: 100% !important;
     display: block !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
     margin: 0 !important;
-    min-height: auto !important;
     background: transparent !important;
   }
 
   .preview-content {
+    display: block !important;
     gap: 0 !important;
     padding: 0 !important;
+    animation: none !important;
   }
 
   /* --- Paginated Page Divs --- */
@@ -79,6 +75,9 @@
     box-shadow: none !important;
     border-radius: 0 !important;
     margin: 0 !important;
+    zoom: 1 !important;
+    animation: none !important;
+    display: block !important;
     page-break-after: always !important;
     break-after: page !important;
     overflow: hidden !important;
@@ -125,8 +124,13 @@
     text-decoration: none;
   }
 
-  /* --- Hide image remove overlays in print --- */
-  .image-remove-overlay {
+  /* --- Hide image controls in print; the "left out" box keeps its space --- */
+  .image-remove-btn,
+  .image-undo-btn {
     display: none !important;
+  }
+
+  .image-left-out {
+    visibility: hidden !important;
   }
 }

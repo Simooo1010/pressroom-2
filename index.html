@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pressroom — Print Your Substack</title>
+  <meta name="theme-color" content="#EDEBE6">
   <meta name="description" content="Turn your favorite Substack posts into beautifully formatted printable documents. Six layout styles: clean, newspaper, scientific paper, book, monospace, and magazine.">
   <meta property="og:title" content="Pressroom — Print Your Substack">
   <meta property="og:description" content="Turn your favorite Substack posts into beautifully formatted printable documents.">
@@ -13,7 +14,7 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,800;1,6..96,500&family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
 
   <!-- Stylesheets -->
   <link rel="stylesheet" href="/src/styles/base.css">
@@ -27,128 +28,181 @@
   <link rel="stylesheet" href="/src/styles/format-magazine.css">
   <link rel="stylesheet" href="/src/styles/customization.css">
 </head>
-<body>
-  <!-- Header -->
-  <header class="app-header" id="app-header">
-    <span class="app-title">Pressroom</span>
-    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
-      <span class="theme-toggle-icon" id="theme-toggle-icon">☀</span>
-    </button>
-  </header>
+<body data-view="front">
+  <a class="skip-link" href="#main">Skip to content</a>
 
-  <!-- Input Section -->
-  <section class="input-section" id="input-section">
-    <p class="input-label">Paste a Substack URL or publication name</p>
-    <form id="fetch-form" class="input-form">
-      <div class="input-wrapper">
-        <input
-          type="text"
-          class="url-input"
-          id="url-input"
-          placeholder="https://example.substack.com/p/article-slug"
-          autocomplete="off"
-          spellcheck="false"
-          required
-        >
-        <button type="submit" class="submit-btn" id="submit-btn">Go</button>
+  <!-- ═══ Screen 01 — Front page ═══ -->
+  <div class="front" id="front">
+    <div class="crosshair crosshair-a" aria-hidden="true"></div>
+    <div class="crosshair crosshair-b" aria-hidden="true"></div>
+    <div class="cmyk-strip" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+    <div class="front-inner" id="main">
+      <div class="dateline">
+        <span id="dateline-date">Vol. 2</span>
+        <span class="dateline-tag">Substack in, paper out</span>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false">Night edition (dark)</button>
       </div>
-    </form>
 
-    <!-- Mode Toggle -->
-    <div class="mode-toggle" id="mode-toggle">
-      <label class="mode-option active" data-mode="single">
-        <input type="radio" name="fetch-mode" value="single" checked>
-        <span>Single article</span>
-      </label>
-      <label class="mode-option" data-mode="publication">
-        <input type="radio" name="fetch-mode" value="publication">
-        <span>Latest from publication</span>
-      </label>
-    </div>
+      <h1 class="masthead">Pressroom</h1>
+      <div class="double-rule" id="double-rule" role="progressbar" aria-label="Fetching progress" aria-hidden="true"></div>
 
-    <!-- Post Count (hidden by default, shown for publication mode) -->
-    <div class="post-count-wrapper hidden" id="post-count-wrapper">
-      <label for="post-count">Number of posts:</label>
-      <input type="number" id="post-count" class="post-count-input" min="1" max="20" value="3">
-    </div>
-  </section>
+      <div class="front-cols">
+        <form id="fetch-form" class="headline-form" novalidate>
+          <div class="mode-switch" id="mode-toggle" role="group" aria-label="What to print">
+            <button type="button" class="mode-option is-selected" data-mode="single" aria-pressed="true">One post</button>
+            <button type="button" class="mode-option" data-mode="publication" aria-pressed="false">Whole publication</button>
+          </div>
+          <div class="post-count-wrapper" id="post-count-wrapper" hidden>
+            <label for="post-count" class="caps">Latest</label>
+            <input type="number" id="post-count" class="post-count-input" min="1" max="20" value="3" inputmode="numeric">
+            <span class="caps">posts</span>
+          </div>
 
-  <!-- Format Selector -->
-  <nav class="format-selector" id="format-selector">
-    <button class="format-btn active" data-format="default">Default</button>
-    <button class="format-btn" data-format="newspaper">Newspaper</button>
-    <button class="format-btn" data-format="scientific">Scientific</button>
-    <button class="format-btn" data-format="book">Book</button>
-    <button class="format-btn" data-format="monospace">Monospace</button>
-    <button class="format-btn" data-format="magazine">Magazine</button>
-  </nav>
+          <label for="url-input" class="headline-label caps">Today's headline is your link</label>
+          <div class="headline-field" id="headline-field">
+            <input type="text" class="url-input" id="url-input" placeholder="https://example.substack.com/p/article-slug" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="helper">
+            <span class="headline-status" id="headline-status" aria-hidden="true">Setting type…</span>
+          </div>
 
-  <!-- Customization Controls -->
-  <div class="customization-bar" id="customization-bar">
-    <div class="custom-group">
-      <label for="font-select">Font:</label>
-      <select id="font-select" class="custom-select">
-        <option value="default">Format Default</option>
-        <option value="sans">Modern Sans (Inter)</option>
-        <option value="serif">Classic Serif (Lora)</option>
-        <option value="times">Times New Roman</option>
-        <option value="mono">Typewriter</option>
-      </select>
-    </div>
-    <div class="custom-group">
-      <label for="size-slider">Size (<span id="size-val">12</span>pt):</label>
-      <input type="range" id="size-slider" class="custom-slider" min="8" max="36" value="12">
-    </div>
-    <div class="custom-group">
-      <label for="line-spacing-slider">Spacing (<span id="line-spacing-val">1.6</span>):</label>
-      <input type="range" id="line-spacing-slider" class="custom-slider" min="1.0" max="3.0" step="0.1" value="1.6">
-    </div>
-    <div class="custom-group">
-      <label for="margin-slider">Margin (<span id="margin-val">25</span>mm):</label>
-      <input type="range" id="margin-slider" class="custom-slider" min="0" max="80" value="25">
-    </div>
-    <div class="custom-group checkbox-group">
-      <label class="custom-checkbox-label">
-        <input type="checkbox" id="exclude-embeds">
-        Exclude Video Embeds
-      </label>
+          <div class="notice-slot" aria-live="polite">
+            <p class="helper" id="helper">Paste a Substack post link, or switch to a whole publication and type its address.</p>
+            <div class="notice hidden" id="error-message" role="alert">
+              <p class="notice-text" id="error-text"></p>
+              <button type="button" class="notice-retry" id="error-retry">Try again</button>
+            </div>
+          </div>
+          <button type="submit" class="go-btn" id="submit-btn">Go to press <span aria-hidden="true">→</span></button>
+        </form>
+
+        <aside class="edition" aria-label="In this edition">
+          <h2 class="caps edition-title">In this edition</h2>
+          <dl class="edition-list">
+            <div><dt>Stock</dt><dd id="ed-stock">Default</dd></div>
+            <div><dt>Sheet</dt><dd>A4</dd></div>
+            <div><dt>Type</dt><dd id="ed-type">Stock default</dd></div>
+            <div><dt>Margins</dt><dd id="ed-margins">25 mm</dd></div>
+            <div><dt>Embeds</dt><dd id="ed-embeds">Kept</dd></div>
+          </dl>
+        </aside>
+      </div>
+
+      <section class="stock-section" aria-labelledby="stock-heading">
+        <h2 class="caps stock-heading" id="stock-heading">Choose your stock</h2>
+        <div class="stock-row" id="format-selector">
+        <button type="button" class="stock-card is-selected" data-format="default" aria-pressed="true" style="--i:0">
+          <span class="stock-aa" aria-hidden="true" style="font-family:Inter, sans-serif;font-weight:400;font-style:normal">Aa</span>
+          <span class="stock-desc">Clean and readable</span>
+          <span class="stock-name">Default</span>
+        </button>
+        <button type="button" class="stock-card" data-format="newspaper" aria-pressed="false" style="--i:1">
+          <span class="stock-aa" aria-hidden="true" style="font-family:'Playfair Display', serif;font-weight:900;font-style:normal">Aa</span>
+          <span class="stock-desc">Columns and a bold masthead</span>
+          <span class="stock-name">Newspaper</span>
+        </button>
+        <button type="button" class="stock-card" data-format="scientific" aria-pressed="false" style="--i:2">
+          <span class="stock-aa" aria-hidden="true" style="font-family:'Libre Baskerville', serif;font-weight:400;font-style:normal">Aa</span>
+          <span class="stock-desc">Abstract, two columns, citations</span>
+          <span class="stock-name">Scientific</span>
+        </button>
+        <button type="button" class="stock-card" data-format="book" aria-pressed="false" style="--i:3">
+          <span class="stock-aa" aria-hidden="true" style="font-family:'EB Garamond', serif;font-weight:400;font-style:normal">Aa</span>
+          <span class="stock-desc">Title page and quiet chapters</span>
+          <span class="stock-name">Book</span>
+        </button>
+        <button type="button" class="stock-card" data-format="monospace" aria-pressed="false" style="--i:4">
+          <span class="stock-aa" aria-hidden="true" style="font-family:'JetBrains Mono', monospace;font-weight:700;font-style:normal">Aa</span>
+          <span class="stock-desc">Typewriter, plain and exact</span>
+          <span class="stock-name">Monospace</span>
+        </button>
+        <button type="button" class="stock-card" data-format="magazine" aria-pressed="false" style="--i:5">
+          <span class="stock-aa" aria-hidden="true" style="font-family:'Playfair Display', serif;font-weight:700;font-style:italic">Aa</span>
+          <span class="stock-desc">Big type and generous air</span>
+          <span class="stock-name">Magazine</span>
+        </button>
+        </div>
+      </section>
     </div>
   </div>
 
-  <!-- Error Message -->
-  <div class="error-message hidden" id="error-message"></div>
+  <!-- ═══ Screen 02 — Proof desk ═══ -->
+  <div class="proof" id="proof" hidden>
+    <header class="slug-bar">
+      <button type="button" class="wordmark" id="wordmark" aria-label="Pressroom — back to the front page">Pressroom</button>
+      <span class="slug-source"><span class="caps">Slug</span> <span id="slug-source" class="slug-url"></span></span>
+      <span class="slug-status">
+        <span id="slug-summary" aria-live="polite">0 sheets · A4</span>
+        <span class="roller" id="roller" aria-hidden="true"><i></i></span>
+        <span class="roller-label caps" id="roller-label">re-imposing live</span>
+      </span>
+    </header>
 
-  <!-- Preview Section -->
-  <section class="preview-section" id="preview-section">
-    <div class="preview-container" id="preview-container">
-      <div class="preview-empty" id="preview-empty">
-        <p>Your formatted article will appear here</p>
-      </div>
-      <div class="preview-content" id="preview-content"></div>
-    </div>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay hidden" id="loading-overlay">
-      <div class="loading-spinner">
-        <div class="spinner-dot"></div>
-        <div class="spinner-dot"></div>
-        <div class="spinner-dot"></div>
-      </div>
-      <p class="loading-text">Fetching article…</p>
-    </div>
-  </section>
+    <div class="proof-body">
+      <aside class="rail" id="rail" aria-label="Type controls">
+        <button type="button" class="drawer-handle" id="drawer-handle" aria-expanded="false" aria-controls="rail-inner"><span>Type</span></button>
+        <div class="rail-inner" id="rail-inner">
+          <div class="rail-block">
+            <span class="caps rail-label" id="stock-label">Stock</span>
+            <div class="stock-grid" id="stock-grid" role="group" aria-labelledby="stock-label">
+          <button type="button" class="stock-mini is-selected" data-format="default" aria-pressed="true">Default</button>
+          <button type="button" class="stock-mini" data-format="newspaper" aria-pressed="false">Newspaper</button>
+          <button type="button" class="stock-mini" data-format="scientific" aria-pressed="false">Scientific</button>
+          <button type="button" class="stock-mini" data-format="book" aria-pressed="false">Book</button>
+          <button type="button" class="stock-mini" data-format="monospace" aria-pressed="false">Monospace</button>
+          <button type="button" class="stock-mini" data-format="magazine" aria-pressed="false">Magazine</button>
+            </div>
+          </div>
+          <div class="rail-block">
+            <label for="font-select" class="caps rail-label">Typeface</label>
+            <select id="font-select" class="rail-select">
+              <option value="default">Stock default</option>
+              <option value="sans">Modern Sans (Inter)</option>
+              <option value="serif">Classic Serif (Lora)</option>
+              <option value="times">Times New Roman</option>
+              <option value="mono">Typewriter</option>
+            </select>
+          </div>
+          <div class="rail-block rail-control">
+            <div class="rail-head"><label for="size-slider" class="caps rail-label">Size</label><output class="rail-value" for="size-slider"><span id="size-val">12</span><small>pt</small></output></div>
+            <input type="range" id="size-slider" class="ruler" min="8" max="20" step="1" value="12">
+            <div class="ticks" aria-hidden="true"></div>
+          </div>
+          <div class="rail-block rail-control">
+            <div class="rail-head"><label for="line-spacing-slider" class="caps rail-label">Leading</label><output class="rail-value" for="line-spacing-slider"><span id="line-spacing-val">1.6</span></output></div>
+            <input type="range" id="line-spacing-slider" class="ruler" min="1.0" max="2.4" step="0.1" value="1.6">
+            <div class="ticks" aria-hidden="true"></div>
+          </div>
+          <div class="rail-block rail-control">
+            <div class="rail-head"><label for="margin-slider" class="caps rail-label">Margins</label><output class="rail-value" for="margin-slider"><span id="margin-val">25</span><small>mm</small></output></div>
+            <input type="range" id="margin-slider" class="ruler" min="5" max="40" step="1" value="25">
+            <div class="ticks" aria-hidden="true"></div>
+          </div>
+          <label class="check">
+            <input type="checkbox" id="exclude-embeds">
+            <span>Leave out embeds</span>
+          </label>
+          <div class="rail-foot">
+            <button type="button" class="print-btn" id="btn-print">Print / Save PDF</button>
+            <p class="print-tip">Tip: set margins to “None” in the print dialog.</p>
+          </div>
+        </div>
+      </aside>
 
-  <!-- Action Bar -->
-  <div class="action-bar hidden" id="action-bar">
-    <button class="action-btn" id="btn-print">
-      ⎙ Print PDF
-    </button>
-    <span class="print-tip">Set margins to "None" in the print dialog for best results</span>
+      <main class="desk" id="desk">
+        <div class="pub-tabs hidden" id="pub-tabs" role="tablist" aria-label="Posts"></div>
+        <div class="preview-container" id="preview-container">
+          <div class="preview-content" id="preview-content"></div>
+        </div>
+        <nav class="spread-nav" id="spread-nav" aria-label="Sheets">
+          <button type="button" class="nav-btn" id="spread-prev" aria-label="Previous sheets">←</button>
+          <span class="spread-label caps" id="spread-label" aria-live="polite">Sheets 1–2 of 0</span>
+          <button type="button" class="nav-btn" id="spread-next" aria-label="Next sheets">→</button>
+        </nav>
+      </main>
+    </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="app-footer" id="app-footer">
-    <p>Pressroom — faithful printing for Substack readers</p>
-  </footer>
+  <div class="print-overlay" id="print-overlay" aria-hidden="true"><span>Off to the printer</span></div>
 
   <script type="module" src="/src/main.js"></script>
 </body>
