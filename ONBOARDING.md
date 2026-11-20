@@ -38,8 +38,8 @@ Flow traced: user pastes a Substack URL → previews it → saves as PDF.
 Notable: **`POST /api/pdf` (`server/pdf.js`, Puppeteer) exists but nothing in `src/` or `index.html` calls it** (grep confirmed). It appears to be a leftover from an earlier design.
 
 ## Conventions
-- Naming: camelCase functions/vars, kebab-case CSS classes and file names, one `format-<name>` CSS class per layout; `FORMAT_REGISTRY` key = format name = `data-format` on `.format-btn`.
-- Adding a layout means: new `src/formats/x.js`, register in `renderer.js`, add `src/styles/format-x.css` and a `<link>` in `index.html`, add a `.format-btn` `[unverified: button markup not inspected]`.
+- Naming: camelCase functions/vars, kebab-case CSS classes and file names, one `format-<name>` CSS class per layout; `FORMAT_REGISTRY` key = format name = `data-format` on `.stock-card` and `.stock-mini`.
+- Adding a layout means: new `src/formats/x.js`, register in `renderer.js`, add `src/styles/format-x.css` and a `<link>` in `index.html`, add a `.stock-card` (front page) and a `.stock-mini` (proof rail) button with matching `data-format`.
 - Style: banner-comment headers (`// ─── ... ───`), JSDoc on exported functions, section dividers, generous comments.
 - Errors: server routes use try/catch → `console.error` + JSON `{error}` with 500 (400 for missing input); `rss.js` maps common failures to friendly messages; client shows via `showError`.
 - Tests: none. Only manual scripts against a live server and a live Substack URL.

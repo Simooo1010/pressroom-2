@@ -1,9 +1,20 @@
 /**
  * Pressroom — Main Application Entry
- * Handles UI interactions, state management, API calls, and rendering.
+ * "Press Sheet" interface: front page → proof desk.
+ * Handles UI state, API calls and pagination. render(), paginatePreview()
+ * and the format CSS that produce the printed pages are unchanged.
  */
 
-import { render, getFormatCSS } from './renderer.js';
+import { render } from './renderer.js';
+
+const FORMAT_NAMES = {
+  default: 'Default', newspaper: 'Newspaper', scientific: 'Scientific',
+  book: 'Book', monospace: 'Monospace', magazine: 'Magazine',
+};
+const FONT_NAMES = {
+  default: 'Stock default', sans: 'Modern Sans', serif: 'Classic Serif', times: 'Times New Roman', mono: 'Typewriter',
+};
+const SHEET_PX = 210 * (96 / 25.4); // A4 width at 96dpi
 
 // ─── State ──────────────────────────────────────────────
 const state = {
@@ -11,6 +22,11 @@ const state = {
   activeFormat: 'default',
   fetchMode: 'single',   // 'single' or 'publication'
   isLoading: false,
+  view: 'front',         // 'front' | 'proof'
+  dirty: false,          // proof needs re-render when shown
+  pageCount: 0,
+  spreadStart: 0,
+  lastInput: '',
   options: {
     font: 'default',
     margin: 25,
@@ -22,33 +38,48 @@ const state = {
 };
 
 // ─── DOM Elements ───────────────────────────────────────
+const $ = (id) => document.getElementById(id);
 const dom = {
-  themeToggle: document.getElementById('theme-toggle'),
-  themeIcon: document.getElementById('theme-toggle-icon'),
-  fetchForm: document.getElementById('fetch-form'),
-  urlInput: document.getElementById('url-input'),
-  submitBtn: document.getElementById('submit-btn'),
-  modeToggle: document.getElementById('mode-toggle'),
+  front: $('front'),
+  proof: $('proof'),
+  datelineDate: $('dateline-date'),
+  themeToggle: $('theme-toggle'),
+  fetchForm: $('fetch-form'),
+  urlInput: $('url-input'),
+  submitBtn: $('submit-btn'),
   modeOptions: document.querySelectorAll('.mode-option'),
-  postCountWrapper: document.getElementById('post-count-wrapper'),
-  postCountInput: document.getElementById('post-count'),
-  formatSelector: document.getElementById('format-selector'),
-  formatBtns: document.querySelectorAll('.format-btn'),
-  fontSelect: document.getElementById('font-select'),
-  sizeSlider: document.getElementById('size-slider'),
-  sizeVal: document.getElementById('size-val'),
-  lineSpacingSlider: document.getElementById('line-spacing-slider'),
-  lineSpacingVal: document.getElementById('line-spacing-val'),
-  marginSlider: document.getElementById('margin-slider'),
-  marginVal: document.getElementById('margin-val'),
-  excludeEmbeds: document.getElementById('exclude-embeds'),
-  errorMessage: document.getElementById('error-message'),
-  previewContainer: document.getElementById('preview-container'),
-  previewEmpty: document.getElementById('preview-empty'),
-  previewContent: document.getElementById('preview-content'),
-  loadingOverlay: document.getElementById('loading-overlay'),
-  actionBar: document.getElementById('action-bar'),
-  btnPrint: document.getElementById('btn-print'),
+  postCountWrapper: $('post-count-wrapper'),
+  postCountInput: $('post-count'),
+  stockCards: document.querySelectorAll('.stock-card'),
+  stockMinis: document.querySelectorAll('.stock-mini'),
+  fontSelect: $('font-select'),
+  sizeSlider: $('size-slider'),
+  sizeVal: $('size-val'),
+  lineSpacingSlider: $('line-spacing-slider'),
+  lineSpacingVal: $('line-spacing-val'),
+  marginSlider: $('margin-slider'),
+  marginVal: $('margin-val'),
+  excludeEmbeds: $('exclude-embeds'),
+  errorMessage: $('error-message'),
+  errorText: $('error-text'),
+  errorRetry: $('error-retry'),
+  desk: $('desk'),
+  previewContent: $('preview-content'),
+  btnPrint: $('btn-print'),
+  wordmark: $('wordmark'),
+  slugSource: $('slug-source'),
+  slugSummary: $('slug-summary'),
+  pubTabs: $('pub-tabs'),
+  spreadPrev: $('spread-prev'),
+  spreadNext: $('spread-next'),
+  spreadLabel: $('spread-label'),
+  rail: $('rail'),
+  drawerHandle: $('drawer-handle'),
+  printOverlay: $('print-overlay'),
+  edStock: $('ed-stock'),
+  edType: $('ed-type'),
+  edMargins: $('ed-margins'),
+  edEmbeds: $('ed-embeds'),
 };
 
 // ─── Utilities ──────────────────────────────────────────
@@ -65,33 +96,71 @@ function updateAllPageDivs(updateFn) {
   pages.forEach(updateFn);
 }
 
-// ─── Theme Toggle ───────────────────────────────────────
-function initTheme() {
-  const saved = localStorage.getItem('pressroom-theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = saved || (prefersDark ? 'dark' : 'light');
-  setTheme(theme);
+// ─── Theme ("Night edition") ────────────────────────────
+function storedTheme() {
+  try { return localStorage.getItem('pressroom-theme'); } catch { return null; }
+}
 
-  // Listen for system theme changes if user hasn't explicitly saved a preference
+function initTheme() {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  setTheme(storedTheme() || (prefersDark ? 'dark' : 'light'), false);
+
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-    if (!localStorage.getItem('pressroom-theme')) {
-      setTheme(e.matches ? 'dark' : 'light');
-    }
+    if (!storedTheme()) setTheme(e.matches ? 'dark' : 'light', false);
   });
 }
 
-function setTheme(theme) {
+function setTheme(theme, persist = true) {
   document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('pressroom-theme', theme);
-  dom.themeIcon.textContent = theme === 'dark' ? '☾' : '☀';
+  dom.themeToggle.setAttribute('aria-pressed', String(theme === 'dark'));
+  dom.themeToggle.textContent = theme === 'dark' ? 'Day edition (light)' : 'Night edition (dark)';
+  if (persist) {
+    try { localStorage.setItem('pressroom-theme', theme); } catch { /* storage unavailable */ }
+  }
 }
 
 function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme') || 'light';
-  const newTheme = current === 'dark' ? 'light' : 'dark';
-  setTheme(newTheme);
-  // Explicitly save user's manual override
-  localStorage.setItem('pressroom-theme', newTheme);
+  setTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+// ─── Edition list (front page) ──────────────────────────
+function updateEdition() {
+  dom.edStock.textContent = FORMAT_NAMES[state.activeFormat];
+  dom.edType.textContent = state.options.font === 'default'
+    ? 'Stock default'
+    : `${FONT_NAMES[state.options.font]} ${state.options.fontSize} pt`;
+  dom.edMargins.textContent = `${state.options.margin} mm`;
+  dom.edEmbeds.textContent = state.options.excludeEmbeds ? 'Left out' : 'Kept';
+}
+
+function updateDateline() {
+  const d = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  dom.datelineDate.textContent = `Vol. 2 · ${d}`;
+}
+
+// ─── Views ──────────────────────────────────────────────
+function setView(view) {
+  state.view = view;
+  document.body.dataset.view = view;
+  dom.front.hidden = false;
+  dom.front.classList.remove('leaving');
+  dom.proof.hidden = view !== 'proof';
+  window.scrollTo(0, 0);
+  if (view === 'proof') {
+    dom.slugSource.textContent = state.lastInput;
+    if (state.dirty) renderPreview();
+  } else {
+    dom.urlInput.focus({ preventScroll: true });
+  }
+}
+
+function enterProof() {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) { setView('proof'); return; }
+  // The front page collapses upward into the slug bar (0.5 s)
+  dom.front.classList.add('leaving');
+  setTimeout(() => setView('proof'), 480);
 }
 
 // ─── Mode Toggle ────────────────────────────────────────
@@ -100,73 +169,68 @@ function setFetchMode(mode) {
 
   dom.modeOptions.forEach(opt => {
     const isActive = opt.dataset.mode === mode;
-    opt.classList.toggle('active', isActive);
-    opt.querySelector('input').checked = isActive;
+    opt.classList.toggle('is-selected', isActive);
+    opt.setAttribute('aria-pressed', String(isActive));
   });
 
   if (mode === 'publication') {
-    dom.postCountWrapper.classList.remove('hidden');
+    dom.postCountWrapper.hidden = false;
     dom.urlInput.placeholder = 'example.substack.com';
   } else {
-    dom.postCountWrapper.classList.add('hidden');
+    dom.postCountWrapper.hidden = true;
     dom.urlInput.placeholder = 'https://example.substack.com/p/article-slug';
   }
 }
 
-// ─── Format Selector ────────────────────────────────────
+// ─── Stock selection ────────────────────────────────────
 function setActiveFormat(format) {
   state.activeFormat = format;
 
-  dom.formatBtns.forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.format === format);
+  [...dom.stockCards, ...dom.stockMinis].forEach(btn => {
+    const on = btn.dataset.format === format;
+    btn.classList.toggle('is-selected', on);
+    btn.setAttribute('aria-pressed', String(on));
   });
+  updateEdition();
 
-  // Re-render if we have data
-  if (state.articles) {
-    renderPreview();
-  }
+  if (state.articles) renderPreview();
 }
 
 // ─── Loading State ──────────────────────────────────────
 function setLoading(isLoading) {
   state.isLoading = isLoading;
-
-  if (isLoading) {
-    dom.loadingOverlay.classList.remove('hidden');
-    dom.submitBtn.disabled = true;
-    dom.submitBtn.textContent = '…';
-    dom.errorMessage.classList.add('hidden');
-  } else {
-    dom.loadingOverlay.classList.add('hidden');
-    dom.submitBtn.disabled = false;
-    dom.submitBtn.textContent = 'Go';
-  }
+  dom.front.classList.toggle('is-loading', isLoading);
+  $('double-rule').setAttribute('aria-hidden', String(!isLoading));
+  dom.submitBtn.disabled = isLoading;
+  dom.urlInput.readOnly = isLoading;
+  if (isLoading) hideError();
 }
 
 // ─── Error Display ──────────────────────────────────────
 function showError(message) {
-  dom.errorMessage.textContent = message;
+  dom.errorText.textContent = message;
   dom.errorMessage.classList.remove('hidden');
+  dom.front.classList.add('has-error');
 }
 
 function hideError() {
   dom.errorMessage.classList.add('hidden');
+  dom.front.classList.remove('has-error');
 }
 
 // ─── Fetch Article(s) ───────────────────────────────────
 async function fetchArticles(input) {
   setLoading(true);
   hideError();
+  state.lastInput = input;
 
   try {
     let body;
 
     if (state.fetchMode === 'single') {
-      // Single article URL
       body = { url: input };
     } else {
-      // Publication name — get latest N
-      const count = parseInt(dom.postCountInput.value, 10) || 3;
+      const count = Math.min(20, Math.max(1, parseInt(dom.postCountInput.value, 10) || 3));
       body = { publication: input, count };
     }
 
@@ -185,24 +249,28 @@ async function fetchArticles(input) {
 
     // Server returns { articles: [...] }
     const articlesArray = data.articles || (Array.isArray(data) ? data : [data]);
-    state.articles = articlesArray;
-    state.options.removedImages = new Set(); // Reset removals for new document
 
-    if (state.articles.length === 0) {
-      throw new Error('No articles found.');
+    if (articlesArray.length === 0) {
+      throw new Error('No articles found. Check the link or publication name and try again.');
     }
 
-    renderPreview();
-    dom.actionBar.classList.remove('hidden');
-    dom.previewEmpty.classList.add('hidden');
+    // Paywalled / empty posts: say what was and was not fetched
+    const withBody = articlesArray.filter(a => a.elements && a.elements.length > 0);
+    if (withBody.length === 0) {
+      const titles = articlesArray.map(a => a.title).filter(Boolean).join('; ');
+      throw new Error(`Fetched the title${titles ? ` (“${titles}”)` : ''} but no body text. The post may be paywalled or members-only.`);
+    }
 
+    state.articles = withBody;
+    state.options.removedImages = new Set(); // Reset removals for new document
+    state.spreadStart = 0;
+    state.dirty = true;
+
+    setLoading(false);
+    setView('proof'); // collapses straight into the proof desk
   } catch (err) {
     console.error('Fetch error:', err);
     showError(err.message || 'Failed to fetch article. Please check the URL and try again.');
-    state.articles = null;
-    dom.actionBar.classList.add('hidden');
-    dom.previewEmpty.classList.remove('hidden');
-  } finally {
     setLoading(false);
   }
 }
@@ -345,6 +413,15 @@ function isKeepWithNext(b) {
 }
 
 async function paginatePreview(html) {
+  dom.previewContent.classList.add('measuring');
+  try {
+    await paginateInner(html);
+  } finally {
+    dom.previewContent.classList.remove('measuring');
+  }
+}
+
+async function paginateInner(html) {
   const marginMm = parseFloat(state.options.margin);
   
   // Parse HTML into temp container
@@ -353,13 +430,17 @@ async function paginatePreview(html) {
   const formatDiv = temp.firstElementChild;
   if (!formatDiv) return;
 
-  // --- Apply saved removals before pagination ---
+  // --- Replace removed images with a hatched "left out" box (undo-able) ---
   if (state.options.removedImages && state.options.removedImages.size > 0) {
     const imagesToProcess = formatDiv.querySelectorAll('figure, img.hero-image, .monospace-image');
     imagesToProcess.forEach(target => {
       const img = target.tagName === 'IMG' ? target : target.querySelector('img');
       if (img && state.options.removedImages.has(img.src)) {
-        target.remove();
+        const box = document.createElement('div');
+        box.className = 'image-left-out';
+        box.dataset.src = img.src;
+        box.innerHTML = '<span>Image left out</span><button type="button" class="image-undo-btn">Undo</button>';
+        target.replaceWith(box);
       }
     });
   }
@@ -392,7 +473,11 @@ async function paginatePreview(html) {
   const blocks = extractBlocks(formatDiv);
   const elemBlocks = blocks.filter(b => b.el);
 
-  if (elemBlocks.length === 0) return;
+  if (elemBlocks.length === 0) {
+    dom.previewContent.innerHTML = '';
+    state.pageCount = 0;
+    return;
+  }
 
   // ── Measurement pass ──────────────────────────────────
   // Place all block elements in a hidden measurer at the correct content width.
@@ -583,74 +668,204 @@ async function paginatePreview(html) {
     dom.previewContent.appendChild(page);
   });
 
-  // Attach image hover-to-remove handlers
+  // Attach image removal handlers and crop marks
   attachImageRemoveHandlers();
+  addCropMarks();
+  state.pageCount = pages.length;
 }
 
 // ─── Render Preview ─────────────────────────────────────
 async function renderPreview() {
   if (!state.articles) return;
+  if (state.view !== 'proof') { state.dirty = true; return; }
+  state.dirty = false;
+
+  const token = ++renderToken;
+  dom.proof.classList.add('is-paginating');
 
   const html = render(state.articles, state.activeFormat, {
     excludeEmbeds: state.options.excludeEmbeds
   });
 
-  // Fade transition
+  // Fade transition, then paginate
   dom.previewContent.style.opacity = '0';
-  
-  // Wait briefly for transition, then paginate
-  setTimeout(async () => {
-    await paginatePreview(html);
-    dom.previewContent.style.opacity = '1';
-  }, 150);
+  await new Promise(r => setTimeout(r, 150));
+  if (token !== renderToken) return; // a newer render superseded this one
+
+  await paginatePreview(html);
+  if (token !== renderToken) return;
+
+  dom.previewContent.style.opacity = '1';
+  dom.proof.classList.remove('is-paginating');
+  buildPubTabs();
+  showSpread(state.spreadStart, true);
 }
+let renderToken = 0;
 
 // Debounced re-pagination for slider changes
 const debouncedRepaginate = debounce(() => {
   if (state.articles) renderPreview();
 }, 300);
 
-// ─── Image Hover-to-Remove ──────────────────────────────
+// ─── Crop marks ─────────────────────────────────────────
+function addCropMarks() {
+  updateAllPageDivs(page => {
+    ['tl', 'tr', 'bl', 'br'].forEach(pos => {
+      const c = document.createElement('span');
+      c.className = `crop crop-${pos}`;
+      c.setAttribute('aria-hidden', 'true');
+      page.appendChild(c);
+    });
+  });
+}
+
+// ─── Spreads (two sheets wide, one on narrow) ───────────
+function perSpread() {
+  return window.innerWidth >= 1100 ? 2 : 1;
+}
+
+function fitSheets() {
+  const n = perSpread();
+  const style = window.getComputedStyle(dom.desk);
+  const avail = dom.desk.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  const gap = 32;
+  const zoom = Math.min(1, Math.max(0.2, (avail - gap * (n - 1)) / (SHEET_PX * n)));
+  dom.previewContent.style.setProperty('--sheet-zoom', zoom.toFixed(3));
+}
+
+function showSpread(start, animate = false) {
+  const pages = [...dom.previewContent.querySelectorAll('.preview-page')];
+  const n = perSpread();
+  const total = pages.length;
+  if (total === 0) {
+    dom.spreadLabel.textContent = 'No sheets';
+    dom.slugSummary.textContent = '0 sheets';
+    dom.spreadPrev.disabled = dom.spreadNext.disabled = true;
+    return;
+  }
+  start = Math.max(0, Math.min(start, total - 1));
+  start -= start % n; // snap to spread boundary
+  state.spreadStart = start;
+  fitSheets();
+
+  pages.forEach((p, i) => {
+    const visible = i >= start && i < start + n;
+    p.classList.toggle('off-spread', !visible);
+    p.classList.remove('drop');
+    if (visible && animate) {
+      p.style.animationDelay = `${(i - start) * 120}ms`;
+      void p.offsetWidth;
+      p.classList.add('drop');
+    }
+  });
+
+  if (animate === 'turn') {
+    dom.previewContent.classList.remove('turn');
+    void dom.previewContent.offsetWidth;
+    dom.previewContent.classList.add('turn');
+  }
+
+  const last = Math.min(start + n, total);
+  const range = last - start > 1 ? `${start + 1}–${last}` : `${start + 1}`;
+  let label = `Sheets ${range} of ${total}`;
+  if (n === 1) label = `Sheet ${start + 1} of ${total}`;
+  if (state.articles.length > 1) {
+    const post = currentPostIndex();
+    label = `Sheet ${start + 1} of ${total} · post ${post + 1} of ${state.articles.length}`;
+    [...dom.pubTabs.children].forEach((t, i) => t.setAttribute('aria-selected', String(i === post)));
+  }
+  dom.spreadLabel.textContent = label;
+  dom.slugSummary.textContent = `${total} sheet${total === 1 ? '' : 's'} · A4 · ${FORMAT_NAMES[state.activeFormat]}`;
+  dom.spreadPrev.disabled = start === 0;
+  dom.spreadNext.disabled = start + n >= total;
+}
+
+function turnSpread(dir) {
+  const n = perSpread();
+  const next = state.spreadStart + dir * n;
+  if (next < 0 || next >= state.pageCount) return;
+  showSpread(next, 'turn');
+}
+
+// ─── Publication tabs ───────────────────────────────────
+let postStarts = [];
+
+function computePostStarts() {
+  const pages = [...dom.previewContent.querySelectorAll('.preview-page')];
+  const texts = pages.map(p => (p.textContent || '').replace(/\s+/g, ' ').toLowerCase());
+  postStarts = [];
+  let from = 0;
+  state.articles.forEach((a, idx) => {
+    const t = (a.title || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    let found = t ? texts.findIndex((tx, i) => i >= from && tx.includes(t)) : -1;
+    if (found < 0) found = idx === 0 ? 0 : Math.min(from, pages.length - 1);
+    postStarts.push(found);
+    from = found + (idx === 0 ? 1 : 1);
+  });
+}
+
+function currentPostIndex() {
+  let cur = 0;
+  postStarts.forEach((s, i) => { if (state.spreadStart + perSpread() - 1 >= s) cur = i; });
+  // prefer the post that owns the first visible sheet
+  let first = 0;
+  postStarts.forEach((s, i) => { if (state.spreadStart >= s) first = i; });
+  return first <= cur ? first : cur;
+}
+
+function buildPubTabs() {
+  dom.pubTabs.innerHTML = '';
+  if (!state.articles || state.articles.length < 2) {
+    dom.pubTabs.classList.add('hidden');
+    postStarts = [];
+    return;
+  }
+  computePostStarts();
+  state.articles.forEach((a, i) => {
+    const tab = document.createElement('button');
+    tab.type = 'button';
+    tab.className = 'pub-tab';
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-selected', 'false');
+    tab.textContent = `${String(i + 1).padStart(2, '0')} ${a.title || 'Untitled'}`;
+    tab.title = a.title || '';
+    tab.addEventListener('click', () => showSpread(postStarts[i] ?? 0, 'turn'));
+    dom.pubTabs.appendChild(tab);
+  });
+  dom.pubTabs.classList.remove('hidden');
+}
+
+// ─── Per-image removal (44 px ✕ button) with undo ───────
 function attachImageRemoveHandlers() {
   const figures = dom.previewContent.querySelectorAll('figure, img.hero-image');
   figures.forEach(target => {
-    // Skip if already wired
     if (target.dataset.removable) return;
     target.dataset.removable = 'true';
 
-    // Wrap standalone <img> in a container for positioning
     const wrapper = document.createElement('div');
     wrapper.className = 'image-remove-wrapper';
 
-    // Build overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'image-remove-overlay';
-    overlay.innerHTML = '<span class="image-remove-icon">✕ Remove image</span>';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'image-remove-btn';
+    btn.setAttribute('aria-label', 'Remove this image');
+    btn.textContent = '×';
 
-    // Insert wrapper around the target element
     target.parentNode.insertBefore(wrapper, target);
     wrapper.appendChild(target);
-    wrapper.appendChild(overlay);
+    wrapper.appendChild(btn);
 
-    // Click to remove
-    overlay.addEventListener('click', () => {
-      // Save the removed state
+    btn.addEventListener('click', () => {
       const img = target.tagName === 'IMG' ? target : target.querySelector('img');
-      if (img && img.src) {
-        state.options.removedImages.add(img.src);
-      }
+      if (img && img.src) state.options.removedImages.add(img.src);
+      renderPreview(); // Reflow text across all sheets
+    });
+  });
 
-      wrapper.style.transition = 'opacity 0.25s ease, max-height 0.35s ease';
-      wrapper.style.opacity = '0';
-      wrapper.style.maxHeight = wrapper.offsetHeight + 'px';
-      requestAnimationFrame(() => {
-        wrapper.style.maxHeight = '0';
-        wrapper.style.overflow = 'hidden';
-      });
-      setTimeout(() => {
-        wrapper.remove();
-        debouncedRepaginate(); // Reflow text across all pages
-      }, 350);
+  dom.previewContent.querySelectorAll('.image-undo-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.options.removedImages.delete(btn.closest('.image-left-out').dataset.src);
+      renderPreview();
     });
   });
 }
@@ -659,7 +874,7 @@ function attachImageRemoveHandlers() {
 function printPDF() {
   const originalTitle = document.title;
   let articleTitle = '';
-  
+
   if (state.articles && state.articles.length > 0) {
     if (state.articles.length === 1) {
       articleTitle = state.articles[0].title;
@@ -672,56 +887,66 @@ function printPDF() {
       }
     }
   }
-  
+
   if (articleTitle) {
     // Strip illegal characters for filenames
     document.title = articleTitle.replace(/[\\/:*?"<>|]/g, '').trim();
   }
-  
-  window.print();
-  
-  // Restore the original title shortly after
+
+  // "Off to the printer": 400 ms overlay before the dialog opens
+  dom.printOverlay.classList.add('show');
   setTimeout(() => {
-    document.title = originalTitle;
-  }, 100);
+    dom.printOverlay.classList.remove('show');
+    window.print();
+    setTimeout(() => { document.title = originalTitle; }, 100);
+  }, 400);
 }
 
+// ─── Mobile drawer ──────────────────────────────────────
+function setDrawer(open) {
+  dom.rail.classList.toggle('open', open);
+  dom.drawerHandle.setAttribute('aria-expanded', String(open));
+}
 
 // ─── Event Listeners ────────────────────────────────────
 function init() {
-  // Theme
   initTheme();
+  updateDateline();
+  updateEdition();
   dom.themeToggle.addEventListener('click', toggleTheme);
 
   // Form submission
   dom.fetchForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const input = dom.urlInput.value.trim();
-    if (!input) return;
+    if (!input) {
+      showError('Write today’s headline first: paste a Substack link.');
+      dom.urlInput.focus();
+      return;
+    }
     fetchArticles(input);
   });
+  dom.urlInput.addEventListener('input', () => { if (!state.isLoading) hideError(); });
+  dom.errorRetry.addEventListener('click', () => dom.fetchForm.requestSubmit());
 
-  // Mode toggle
+  // Mode switch
   dom.modeOptions.forEach(opt => {
-    opt.addEventListener('click', () => {
-      setFetchMode(opt.dataset.mode);
-    });
+    opt.addEventListener('click', () => setFetchMode(opt.dataset.mode));
   });
 
-  // Format selector
-  dom.formatBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      setActiveFormat(btn.dataset.format);
-    });
+  // Stock selection (front cards + rail grid)
+  [...dom.stockCards, ...dom.stockMinis].forEach(btn => {
+    btn.addEventListener('click', () => setActiveFormat(btn.dataset.format));
   });
 
-  // Action buttons
+  dom.wordmark.addEventListener('click', () => setView('front'));
   dom.btnPrint.addEventListener('click', printPDF);
 
-  // Customization controls — instant visual update + debounced re-pagination
+  // Rail controls — instant visual update + debounced re-pagination
   dom.fontSelect.addEventListener('change', (e) => {
     state.options.font = e.target.value;
     updateAllPageDivs(page => { page.dataset.font = state.options.font; });
+    updateEdition();
     debouncedRepaginate();
   });
 
@@ -732,12 +957,13 @@ function init() {
       page.dataset.fontSize = state.options.fontSize;
       page.style.setProperty('--base-font-size', `${state.options.fontSize}pt`);
     });
+    updateEdition();
     debouncedRepaginate();
   });
 
   dom.lineSpacingSlider.addEventListener('input', (e) => {
     state.options.lineSpacing = e.target.value;
-    dom.lineSpacingVal.textContent = state.options.lineSpacing;
+    dom.lineSpacingVal.textContent = Number(state.options.lineSpacing).toFixed(1);
     updateAllPageDivs(page => {
       page.style.setProperty('--line-spacing', state.options.lineSpacing);
     });
@@ -750,16 +976,45 @@ function init() {
     updateAllPageDivs(page => {
       page.style.padding = `${state.options.margin}mm`;
     });
+    updateEdition();
     debouncedRepaginate();
   });
 
   dom.excludeEmbeds.addEventListener('change', (e) => {
     state.options.excludeEmbeds = e.target.checked;
+    updateEdition();
     renderPreview();
   });
 
-  // Smooth transitions on preview content
-  dom.previewContent.style.transition = 'opacity 0.15s ease';
+  // Spread navigation
+  dom.spreadPrev.addEventListener('click', () => turnSpread(-1));
+  dom.spreadNext.addEventListener('click', () => turnSpread(1));
+  document.addEventListener('keydown', (e) => {
+    if (state.view !== 'proof') return;
+    if (e.target.matches('input, select, textarea')) return;
+    if (e.key === 'ArrowLeft') turnSpread(-1);
+    if (e.key === 'ArrowRight') turnSpread(1);
+  });
+
+  // Swipe between sheets (narrow screens)
+  let touchX = null;
+  dom.desk.addEventListener('touchstart', (e) => { touchX = e.touches[0].clientX; }, { passive: true });
+  dom.desk.addEventListener('touchend', (e) => {
+    if (touchX === null) return;
+    const dx = e.changedTouches[0].clientX - touchX;
+    touchX = null;
+    if (Math.abs(dx) > 50) turnSpread(dx < 0 ? 1 : -1);
+  }, { passive: true });
+
+  // Drawer
+  dom.drawerHandle.addEventListener('click', () => setDrawer(!dom.rail.classList.contains('open')));
+
+  // Resize: refit the sheets, one or two at a time
+  window.addEventListener('resize', debounce(() => {
+    if (state.view === 'proof' && state.pageCount) showSpread(state.spreadStart);
+  }, 120));
+
+  setView('front');
 }
 
 // ─── Start ──────────────────────────────────────────────
